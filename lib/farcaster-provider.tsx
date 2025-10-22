@@ -1,12 +1,12 @@
 'use client'
 
-import sdk, { type FrameContext } from '@farcaster/frame-sdk'
+import sdk from '@farcaster/frame-sdk'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 // Context to share Farcaster data across the app
 interface FarcasterContextType {
   isSDKLoaded: boolean
-  context: FrameContext | null
+  context: any | null
   isLoading: boolean
 }
 
@@ -18,7 +18,7 @@ const FarcasterContext = createContext<FarcasterContextType>({
 
 export function FarcasterProvider({ children }: { children: React.ReactNode }) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false)
-  const [context, setContext] = useState<FrameContext | null>(null)
+  const [context, setContext] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
