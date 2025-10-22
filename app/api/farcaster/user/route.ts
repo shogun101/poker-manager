@@ -8,20 +8,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'FIDs required' }, { status: 400 })
   }
 
+  const apiKey = process.env.NEYNAR_API_KEY
+
+  if (!apiKey) {
+    console.error('NEYNAR_API_KEY not found in environment')
+    return NextResponse.json(
+      { error: 'API key not configured' },
+      { status: 500 }
+    )
+  }
+
   try {
-    // Using Neynar's public API
+    // Using Neynar's API with authentication
     const response = await fetch(
       `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fids}`,
       {
         headers: {
           accept: 'application/json',
-          // Neynar allows unauthenticated requests for basic user lookups
+          api_key: apiKey,
         },
       }
     )
 
     if (!response.ok) {
-      throw new Error(`Neynar API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`Neynar API error: ${response.status} - ${errorText}`)
+      return NextResponse.json(
+        { error: `API error: ${response.status}` },
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
