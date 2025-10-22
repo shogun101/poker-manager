@@ -3,7 +3,7 @@
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
 import { Game, Player } from '@/lib/types'
-import { formatCurrency, getProfilePicture, getDisplayName } from '@/lib/utils'
+import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/utils'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
@@ -15,6 +15,7 @@ export default function HostDashboard() {
 
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
+  const [farcasterUsers, setFarcasterUsers] = useState<Map<number, FarcasterUser>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -50,6 +51,13 @@ export default function HostDashboard() {
 
         if (!playersError && playersData) {
           setPlayers(playersData)
+
+          // Fetch Farcaster user data for all players
+          const fids = playersData.map(p => p.fid)
+          if (fids.length > 0) {
+            const users = await getFarcasterUsers(fids)
+            setFarcasterUsers(users)
+          }
         }
       } catch (err) {
         console.error('Error loading game:', err)
@@ -229,40 +237,44 @@ export default function HostDashboard() {
             </div>
           ) : (
             <div className="space-y-2">
-              {players.map((player) => (
-                <div
-                  key={player.id}
-                  className="border border-gray-200 rounded-md p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Image
-                        src={getProfilePicture(player.fid)}
-                        alt={`User ${player.fid}`}
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-black truncate">
-                          {getDisplayName(undefined, player.fid)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {player.total_buy_ins} buy-ins • {formatCurrency(player.total_deposited, game.currency)}
-                        </p>
+              {players.map((player) => {
+                const fcUser = farcasterUsers.get(player.fid)
+                return (
+                  <div
+                    key={player.id}
+                    className="border border-gray-200 rounded-md p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <Image
+                          src={fcUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.fid}`}
+                          alt={fcUser?.username || `User ${player.fid}`}
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                          unoptimized
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-black truncate">
+                            {fcUser ? `@${fcUser.username}` : `User ${player.fid}`}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {player.total_buy_ins} buy-ins • {formatCurrency(player.total_deposited, game.currency)}
+                          </p>
+                        </div>
                       </div>
+                      {game.status === 'active' && (
+                        <button
+                          onClick={() => handleAddBuyIn(player.id)}
+                          className="px-3 py-1.5 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                        >
+                          + Buy-in
+                        </button>
+                      )}
                     </div>
-                    {game.status === 'active' && (
-                      <button
-                        onClick={() => handleAddBuyIn(player.id)}
-                        className="px-3 py-1.5 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
-                      >
-                        + Buy-in
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

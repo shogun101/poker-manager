@@ -3,7 +3,7 @@
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
 import { Game, Player } from '@/lib/types'
-import { formatCurrency, getProfilePicture, getDisplayName } from '@/lib/utils'
+import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/utils'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
@@ -16,6 +16,7 @@ export default function PlayerView() {
   const [game, setGame] = useState<Game | null>(null)
   const [player, setPlayer] = useState<Player | null>(null)
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
+  const [farcasterUsers, setFarcasterUsers] = useState<Map<number, FarcasterUser>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState('')
@@ -58,6 +59,13 @@ export default function PlayerView() {
 
         if (playersData) {
           setAllPlayers(playersData)
+
+          // Fetch Farcaster user data for all players
+          const fids = playersData.map(p => p.fid)
+          if (fids.length > 0) {
+            const users = await getFarcasterUsers(fids)
+            setFarcasterUsers(users)
+          }
         }
       } catch (err) {
         console.error('Error loading game:', err)
@@ -264,33 +272,37 @@ export default function PlayerView() {
             Players ({allPlayers.length})
           </h2>
           <div className="space-y-2">
-            {allPlayers.map((p) => (
-              <div
-                key={p.id}
-                className={`border rounded-md p-3 ${
-                  p.id === player.id ? 'border-black' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={getProfilePicture(p.fid)}
-                    alt={`User ${p.fid}`}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-black">
-                      {getDisplayName(undefined, p.fid)}
-                      {p.id === player.id && ' (You)'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {p.total_buy_ins} buy-ins • {formatCurrency(p.total_deposited, game.currency)}
-                    </p>
+            {allPlayers.map((p) => {
+              const fcUser = farcasterUsers.get(p.fid)
+              return (
+                <div
+                  key={p.id}
+                  className={`border rounded-md p-3 ${
+                    p.id === player.id ? 'border-black' : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={fcUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.fid}`}
+                      alt={fcUser?.username || `User ${p.fid}`}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                      unoptimized
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-black">
+                        {fcUser ? `@${fcUser.username}` : `User ${p.fid}`}
+                        {p.id === player.id && ' (You)'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {p.total_buy_ins} buy-ins • {formatCurrency(p.total_deposited, game.currency)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

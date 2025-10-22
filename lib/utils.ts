@@ -3,48 +3,36 @@ export function formatCurrency(amount: number, currency: string): string {
   return `${amount.toFixed(2)} ${currency}`
 }
 
-// Get Farcaster user profile picture URL
-// Using a generic avatar service that works with FIDs
-export function getProfilePicture(fid: number): string {
-  // DiceBear API for consistent avatars based on FID
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${fid}`
+// Farcaster user data type
+export interface FarcasterUser {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  bio?: string
 }
 
-// Get username or fallback to FID
-export function getDisplayName(username?: string, fid?: number): string {
-  if (username) return username.startsWith('@') ? username : `@${username}`
-  if (fid) return `User ${fid}`
-  return 'Unknown'
-}
+// Fetch Farcaster user data from our API route
+export async function getFarcasterUsers(fids: number[]): Promise<Map<number, FarcasterUser>> {
+  const userMap = new Map<number, FarcasterUser>()
 
-// Fetch Farcaster user data from Neynar API (free public API)
-export async function getFarcasterUser(fid: number) {
+  if (fids.length === 0) return userMap
+
   try {
-    const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`, {
-      headers: {
-        'accept': 'application/json',
-        // Using Neynar's free tier - no API key needed for basic lookups
-      },
-    })
+    const response = await fetch(`/api/farcaster/user?fids=${fids.join(',')}`)
 
     if (!response.ok) {
-      throw new Error('Failed to fetch user')
+      throw new Error('Failed to fetch users')
     }
 
     const data = await response.json()
-    const user = data.users?.[0]
 
-    if (user) {
-      return {
-        username: user.username,
-        displayName: user.display_name || user.username,
-        pfpUrl: user.pfp_url,
-        fid: user.fid,
-      }
-    }
+    data.users?.forEach((user: FarcasterUser) => {
+      userMap.set(user.fid, user)
+    })
   } catch (error) {
-    console.error('Error fetching Farcaster user:', error)
+    console.error('Error fetching Farcaster users:', error)
   }
 
-  return null
+  return userMap
 }
