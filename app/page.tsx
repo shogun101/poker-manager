@@ -1,30 +1,48 @@
 'use client'
 
 import { useFarcaster } from '@/lib/farcaster-provider'
-import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { Game } from '@/lib/types'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const { isSDKLoaded, context, isLoading } = useFarcaster()
   const router = useRouter()
   const [gameCode, setGameCode] = useState('')
+  const [myGames, setMyGames] = useState<Game[]>([])
 
-  // Show loading state while Farcaster SDK initializes
+  // Load user's games
+  useEffect(() => {
+    if (!context) return
+
+    const loadMyGames = async () => {
+      const { data: games } = await supabase
+        .from('games')
+        .select('*')
+        .eq('host_fid', context.user.fid)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (games) setMyGames(games)
+    }
+
+    loadMyGames()
+  }, [context])
+
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
-        <div className="text-white text-xl">Loading Poker Manager...</div>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-sm text-gray-500">Loading...</div>
       </div>
     )
   }
 
-  // Show error if SDK failed to load
   if (!isSDKLoaded || !context) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
-        <div className="text-white text-center px-4">
-          <h1 className="text-2xl font-bold mb-2">Unable to load Poker Manager</h1>
-          <p className="text-purple-200">Please open this app inside Farcaster</p>
+      <div className="flex min-h-screen items-center justify-center bg-white px-4">
+        <div className="text-center">
+          <p className="text-sm text-gray-600">Please open this app inside Farcaster</p>
         </div>
       </div>
     )
@@ -40,72 +58,75 @@ export default function Home() {
     }
   }
 
+  const handleOpenGame = (game: Game) => {
+    router.push(`/host/${game.id}`)
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 px-4">
-      <main className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">♠️</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Poker Manager
-            </h1>
-            <p className="text-gray-600">
-              Manage live poker games with automated settlements
-            </p>
-          </div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-black mb-1">Poker Manager</h1>
+          <p className="text-sm text-gray-600">
+            {context.user.username || `@${context.user.fid}`}
+          </p>
+        </div>
 
-          {/* User Info */}
-          <div className="bg-purple-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600 mb-1">Logged in as</p>
-            <p className="font-semibold text-gray-900">
-              FID: {context.user.fid}
-            </p>
-          </div>
-
-          {/* Create Game Button */}
+        {/* Actions */}
+        <div className="space-y-3 mb-8">
           <button
             onClick={handleCreateGame}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg mb-6"
+            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
           >
             Create New Game
           </button>
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">or</span>
-            </div>
-          </div>
-
-          {/* Join Game */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Join Existing Game
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={gameCode}
-                onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase text-center text-lg font-mono"
-              />
-              <button
-                onClick={handleJoinGame}
-                disabled={gameCode.length !== 6}
-                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold"
-              >
-                Join
-              </button>
-            </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={gameCode}
+              onChange={(e) => setGameCode(e.target.value.toUpperCase())}
+              placeholder="Game code"
+              maxLength={6}
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent uppercase"
+            />
+            <button
+              onClick={handleJoinGame}
+              disabled={gameCode.length !== 6}
+              className="px-4 py-2 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Join
+            </button>
           </div>
         </div>
-      </main>
+
+        {/* My Games */}
+        {myGames.length > 0 && (
+          <div>
+            <h2 className="text-sm font-medium text-gray-900 mb-3">Your Games</h2>
+            <div className="space-y-2">
+              {myGames.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => handleOpenGame(game)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-black">{game.game_code}</p>
+                      <p className="text-xs text-gray-500">
+                        {game.buy_in_amount} {game.currency} • {game.status}
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-400">→</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

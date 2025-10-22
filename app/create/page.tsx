@@ -75,118 +75,92 @@ export default function CreateGame() {
 
   if (!isSDKLoaded || !context) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-sm text-gray-500">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 px-4">
-      <main className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <button
-              onClick={() => router.push('/')}
-              className="text-gray-500 hover:text-gray-700 mb-4 inline-flex items-center text-sm"
-            >
-              ← Back
-            </button>
-            <div className="text-5xl mb-4">🎰</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Create New Game
-            </h1>
-            <p className="text-gray-600">
-              Set up your poker game settings
-            </p>
-          </div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Header */}
+        <button
+          onClick={() => router.push('/')}
+          className="text-sm text-gray-600 hover:text-black mb-6"
+        >
+          ← Back
+        </button>
 
-          {/* Host Info */}
-          <div className="bg-purple-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600 mb-1">You are the host</p>
-            <p className="font-semibold text-gray-900">
-              FID: {context.user.fid}
-            </p>
-          </div>
-
-          {/* Form */}
-          <div className="space-y-6">
-            {/* Buy-in Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buy-in Amount
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.000001"
-                  min="0"
-                  value={buyInAmount}
-                  onChange={(e) => setBuyInAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Amount each player pays per buy-in
-              </p>
-            </div>
-
-            {/* Currency Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Currency
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setCurrency('USDC')}
-                  className={`py-3 px-4 rounded-lg border-2 font-semibold transition-all ${
-                    currency === 'USDC'
-                      ? 'border-purple-600 bg-purple-50 text-purple-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                  }`}
-                >
-                  USDC
-                </button>
-                <button
-                  onClick={() => setCurrency('ETH')}
-                  className={`py-3 px-4 rounded-lg border-2 font-semibold transition-all ${
-                    currency === 'ETH'
-                      ? 'border-purple-600 bg-purple-50 text-purple-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                  }`}
-                >
-                  ETH
-                </button>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Create Button */}
-            <button
-              onClick={handleCreateGame}
-              disabled={isCreating || !buyInAmount}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreating ? 'Creating Game...' : 'Create Game'}
-            </button>
-          </div>
-
-          {/* Info Box */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Next steps:</strong> After creating the game, you'll get a 6-digit code. Share this code with players so they can join!
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-black mb-1">Create Game</h1>
+          <p className="text-sm text-gray-600">Set buy-in amount and currency</p>
         </div>
-      </main>
+
+        {/* Form */}
+        <div className="space-y-6">
+          {/* Buy-in Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Buy-in Amount
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={buyInAmount}
+              onChange={(e) => setBuyInAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+          </div>
+
+          {/* Currency Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Currency
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrency('USDC')}
+                className={`flex-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  currency === 'USDC'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-black border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                USDC
+              </button>
+              <button
+                onClick={() => setCurrency('ETH')}
+                className={`flex-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  currency === 'ETH'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-black border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                ETH
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {error}
+            </div>
+          )}
+
+          {/* Create Button */}
+          <button
+            onClick={handleCreateGame}
+            disabled={isCreating || !buyInAmount}
+            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isCreating ? 'Creating...' : 'Create Game'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
