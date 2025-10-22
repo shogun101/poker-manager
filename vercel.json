@@ -1,0 +1,6 @@
+{
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://elfsjkvlfhmmtpfoswxs.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsZnNqa3ZsZmhtbXRwZm9zd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNDA0NTYsImV4cCI6MjA3NjcxNjQ1Nn0.8mpdP9CYzeSyIUGdEYFhhe7wklp_IDbN11G6T-_N55w"
+  }
+}
