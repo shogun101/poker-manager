@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Required for Farcaster Frame SDK
+  reactStrictMode: true,
+
+  // Allow Farcaster domains for images/resources
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.farcaster.xyz',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

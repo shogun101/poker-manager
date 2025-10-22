@@ -1,65 +1,111 @@
-import Image from "next/image";
+'use client'
+
+import { useFarcaster } from '@/lib/farcaster-provider'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+  const { isSDKLoaded, context, isLoading } = useFarcaster()
+  const router = useRouter()
+  const [gameCode, setGameCode] = useState('')
+
+  // Show loading state while Farcaster SDK initializes
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
+        <div className="text-white text-xl">Loading Poker Manager...</div>
+      </div>
+    )
+  }
+
+  // Show error if SDK failed to load
+  if (!isSDKLoaded || !context) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
+        <div className="text-white text-center px-4">
+          <h1 className="text-2xl font-bold mb-2">Unable to load Poker Manager</h1>
+          <p className="text-purple-200">Please open this app inside Farcaster</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </div>
+    )
+  }
+
+  const handleCreateGame = () => {
+    router.push('/create')
+  }
+
+  const handleJoinGame = () => {
+    if (gameCode.trim().length === 6) {
+      router.push(`/game/${gameCode.toUpperCase()}`)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 px-4">
+      <main className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">♠️</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Poker Manager
+            </h1>
+            <p className="text-gray-600">
+              Manage live poker games with automated settlements
+            </p>
+          </div>
+
+          {/* User Info */}
+          <div className="bg-purple-50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-gray-600 mb-1">Logged in as</p>
+            <p className="font-semibold text-gray-900">
+              FID: {context.user.fid}
+            </p>
+          </div>
+
+          {/* Create Game Button */}
+          <button
+            onClick={handleCreateGame}
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg mb-6"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Create New Game
+          </button>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Join Game */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Join Existing Game
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={gameCode}
+                onChange={(e) => setGameCode(e.target.value.toUpperCase())}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase text-center text-lg font-mono"
+              />
+              <button
+                onClick={handleJoinGame}
+                disabled={gameCode.length !== 6}
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold"
+              >
+                Join
+              </button>
+            </div>
+          </div>
         </div>
       </main>
     </div>
-  );
+  )
 }
