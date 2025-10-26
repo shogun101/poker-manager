@@ -176,7 +176,7 @@ export default function PlayerView() {
         <div className="max-w-2xl mx-auto px-4 py-8">
           <button
             onClick={() => router.push('/')}
-            className="text-sm text-gray-600 hover:text-black mb-6"
+            className="text-sm text-gray-600 hover:text-black mb-6 cursor-pointer"
           >
             ← Back
           </button>
@@ -208,7 +208,7 @@ export default function PlayerView() {
           <button
             onClick={handleJoinGame}
             disabled={isJoining || game.status === 'ended'}
-            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             {isJoining ? 'Joining...' : game.status === 'ended' ? 'Game Ended' : 'Join Game'}
           </button>
@@ -223,7 +223,7 @@ export default function PlayerView() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button
           onClick={() => router.push('/')}
-          className="text-sm text-gray-600 hover:text-black mb-6"
+          className="text-sm text-gray-600 hover:text-black mb-6 cursor-pointer"
         >
           ← Back
         </button>

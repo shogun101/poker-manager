@@ -77,7 +77,7 @@ export default function Home() {
         <div className="space-y-3 mb-8">
           <button
             onClick={handleCreateGame}
-            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
           >
             Create New Game
           </button>
@@ -89,12 +89,12 @@ export default function Home() {
               onChange={(e) => setGameCode(e.target.value.toUpperCase())}
               placeholder="Game code"
               maxLength={6}
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent uppercase"
+              className="flex-1 px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent uppercase placeholder:text-gray-400"
             />
             <button
               onClick={handleJoinGame}
               disabled={gameCode.length !== 6}
-              className="px-4 py-2 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               Join
             </button>
@@ -110,7 +110,7 @@ export default function Home() {
                 <button
                   key={game.id}
                   onClick={() => handleOpenGame(game)}
-                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 transition-colors"
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
