@@ -218,31 +218,6 @@ export default function HostDashboard() {
     }).sort((a, b) => b.profit - a.profit)
   }
 
-
-  const handleAddBuyIn = async (playerId: string) => {
-    if (!game) return
-    const player = players.find((p) => p.id === playerId)
-    if (!player) return
-
-    const { error } = await supabase
-      .from('players')
-      .update({
-        total_buy_ins: player.total_buy_ins + 1,
-        total_deposited: player.total_deposited + game.buy_in_amount,
-      })
-      .eq('id', playerId)
-
-    if (!error) {
-      const { data } = await supabase
-        .from('players')
-        .select('*')
-        .eq('game_id', game.id)
-        .order('created_at', { ascending: true })
-
-      if (data) setPlayers(data)
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
@@ -524,14 +499,6 @@ export default function HostDashboard() {
                           </p>
                         </div>
                       </div>
-                      {game.status === 'active' && (
-                        <button
-                          onClick={() => handleAddBuyIn(player.id)}
-                          className="px-3 py-1.5 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
-                        >
-                          + Buy-in
-                        </button>
-                      )}
                     </div>
                   </div>
                 )

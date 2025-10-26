@@ -135,12 +135,14 @@ export default function PlayerView() {
     try {
       const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
 
-      console.log('Joining game with:', {
+      // Phase A: Simulate transaction by directly adding with 1 buy-in
+      // Phase B: This will trigger actual blockchain transaction first
+      console.log('Joining game with buy-in:', {
         game_id: game.id,
         fid: context.user.fid,
         wallet_address: walletAddress,
-        total_buy_ins: 0,
-        total_deposited: 0,
+        total_buy_ins: 1,
+        total_deposited: game.buy_in_amount,
       })
 
       const { data: newPlayer, error: joinError } = await supabase
@@ -149,8 +151,8 @@ export default function PlayerView() {
           game_id: game.id,
           fid: context.user.fid,
           wallet_address: walletAddress,
-          total_buy_ins: 0,
-          total_deposited: 0,
+          total_buy_ins: 1,
+          total_deposited: game.buy_in_amount,
         })
         .select()
         .single()
@@ -227,6 +229,13 @@ export default function PlayerView() {
             </div>
           </div>
 
+          {/* Supporting text for buy-in */}
+          <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
+            <p className="text-xs text-gray-600">
+              By joining, {formatCurrency(game.buy_in_amount, game.currency)} will be deposited from your wallet to the game escrow.
+            </p>
+          </div>
+
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
               {error}
@@ -238,7 +247,7 @@ export default function PlayerView() {
             disabled={isJoining || game.status === 'ended'}
             className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
-            {isJoining ? 'Joining...' : game.status === 'ended' ? 'Game Ended' : 'Join Game'}
+            {isJoining ? 'Processing...' : game.status === 'ended' ? 'Game Ended' : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`}
           </button>
         </div>
       </div>
@@ -257,8 +266,21 @@ export default function PlayerView() {
         </button>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-black mb-1">{game.game_code}</h1>
-          <p className="text-sm text-gray-600 capitalize">{game.status}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-black mb-1">{game.game_code}</h1>
+              <p className="text-sm text-gray-600 capitalize">{game.status}</p>
+            </div>
+            {/* Show Host Dashboard link if user is the host */}
+            {game.host_fid === context?.user.fid && (
+              <button
+                onClick={() => router.push(`/host/${game.id}`)}
+                className="text-sm px-3 py-1.5 bg-gray-100 text-black rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+              >
+                Host Dashboard →
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Game Stats */}
@@ -293,8 +315,8 @@ export default function PlayerView() {
             </div>
           </div>
 
-          {/* Buy In Button - Show if player hasn't bought in yet */}
-          {player.total_buy_ins === 0 && game.status !== 'ended' && (
+          {/* Buy In Button - Available for additional buy-ins during game */}
+          {game.status !== 'ended' && (
             <button
               onClick={async () => {
                 // Phase A: Just update the database
@@ -318,7 +340,7 @@ export default function PlayerView() {
               }}
               className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
             >
-              Buy In ({formatCurrency(game.buy_in_amount, game.currency)})
+              {player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} ({formatCurrency(game.buy_in_amount, game.currency)})
             </button>
           )}
         </div>
