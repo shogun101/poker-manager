@@ -63,6 +63,24 @@ export default function CreateGame() {
         return
       }
 
+      // Add host as first player with 1 buy-in
+      const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
+      const { error: playerError } = await supabase
+        .from('players')
+        .insert({
+          game_id: game.id,
+          fid: context.user.fid,
+          wallet_address: walletAddress,
+          total_buy_ins: 1,
+          total_deposited: parseFloat(buyInAmount)
+        })
+
+      if (playerError) {
+        console.error('Error adding host as player:', playerError)
+        setError('Failed to join game. Please try again.')
+        return
+      }
+
       // Redirect to host dashboard
       router.push(`/host/${game.id}`)
     } catch (err) {

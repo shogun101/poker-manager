@@ -19,8 +19,6 @@ export default function HostDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
-  const [showStartGameModal, setShowStartGameModal] = useState(false)
-  const [hostBuyIn, setHostBuyIn] = useState(false)
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
 
   // Load game data
@@ -107,54 +105,7 @@ export default function HostDashboard() {
   }, [gameId, isSDKLoaded, context])
 
   const handleStartGame = async () => {
-    if (!game || !context) return
-
-    // Show modal to ask if host wants to buy in
-    setShowStartGameModal(true)
-  }
-
-  const confirmStartGame = async () => {
-    if (!game || !context) return
-
-    // If host wants to buy in, add them as a player first
-    if (hostBuyIn) {
-      const hostPlayer = players.find(p => p.fid === context.user.fid)
-
-      if (!hostPlayer) {
-        // Add host as a player
-        const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
-        const { error: playerError } = await supabase
-          .from('players')
-          .insert({
-            game_id: game.id,
-            fid: context.user.fid,
-            wallet_address: walletAddress,
-            total_buy_ins: 1,
-            total_deposited: game.buy_in_amount
-          })
-
-        if (playerError) {
-          console.error('Error adding host as player:', playerError)
-          setError('Failed to add you to the game')
-          return
-        }
-      } else {
-        // Host is already a player, just add a buy-in
-        const { error: buyInError } = await supabase
-          .from('players')
-          .update({
-            total_buy_ins: hostPlayer.total_buy_ins + 1,
-            total_deposited: hostPlayer.total_deposited + game.buy_in_amount,
-          })
-          .eq('id', hostPlayer.id)
-
-        if (buyInError) {
-          console.error('Error adding host buy-in:', buyInError)
-          setError('Failed to add your buy-in')
-          return
-        }
-      }
-    }
+    if (!game) return
 
     // Start the game
     const { error } = await supabase
@@ -164,8 +115,6 @@ export default function HostDashboard() {
 
     if (!error) {
       setGame({ ...game, status: 'active', started_at: new Date().toISOString() })
-      setShowStartGameModal(false)
-      setHostBuyIn(false)
     }
   }
 
@@ -330,57 +279,6 @@ export default function HostDashboard() {
             <p className="text-sm font-medium text-black">{players.length}</p>
           </div>
         </div>
-
-        {/* Start Game Modal */}
-        {showStartGameModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-md w-full">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-black mb-4">Start Game</h2>
-                <p className="text-sm text-gray-600 mb-6">
-                  Would you like to buy in to this game?
-                </p>
-
-                {/* Host Buy-in Option */}
-                <div className="mb-6">
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-md cursor-pointer hover:border-gray-300 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={hostBuyIn}
-                      onChange={(e) => setHostBuyIn(e.target.checked)}
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-black">Yes, I want to play</p>
-                      <p className="text-xs text-gray-500">
-                        Add {formatCurrency(game.buy_in_amount, game.currency)} buy-in for yourself
-                      </p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowStartGameModal(false)
-                      setHostBuyIn(false)
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmStartGame}
-                    className="flex-1 px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
-                  >
-                    Start Game
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Game Actions */}
         <div className="mb-6">
