@@ -7,6 +7,7 @@ import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/uti
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import ShareLink from '@/components/ShareLink'
 
 export default function HostDashboard() {
   const { gameId } = useParams()
@@ -278,6 +279,11 @@ export default function HostDashboard() {
             <p className="text-xs text-gray-600 mb-1">Players</p>
             <p className="text-sm font-medium text-black">{players.length}</p>
           </div>
+        </div>
+
+        {/* Share Link */}
+        <div className="mb-6">
+          <ShareLink gameCode={game.game_code} />
         </div>
 
         {/* Game Actions */}
