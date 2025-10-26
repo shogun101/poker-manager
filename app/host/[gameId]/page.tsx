@@ -94,11 +94,28 @@ export default function HostDashboard() {
           table: 'players',
           filter: `game_id=eq.${gameId}`,
         },
-        () => {
-          loadGameData()
+        async (payload) => {
+          console.log('Real-time update received:', payload)
+          // Immediately reload game data on any player change
+          await loadGameData()
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'games',
+          filter: `id=eq.${gameId}`,
+        },
+        async (payload) => {
+          console.log('Game update received:', payload)
+          await loadGameData()
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+      })
 
     return () => {
       subscription.unsubscribe()

@@ -78,7 +78,7 @@ export default function PlayerView() {
     loadGameData()
 
     const subscription = supabase
-      .channel(`game-${gameCode}`)
+      .channel(`game-player-${gameCode}`)
       .on(
         'postgres_changes',
         {
@@ -87,8 +87,9 @@ export default function PlayerView() {
           table: 'games',
           filter: `game_code=eq.${gameCode}`,
         },
-        () => {
-          loadGameData()
+        async (payload) => {
+          console.log('Game update received:', payload)
+          await loadGameData()
         }
       )
       .on(
@@ -98,16 +99,25 @@ export default function PlayerView() {
           schema: 'public',
           table: 'players',
         },
-        () => {
-          loadGameData()
+        async (payload) => {
+          console.log('Player update received:', payload)
+          // Only reload if this change is for our game
+          if (game && payload.new && (payload.new as any).game_id === game.id) {
+            await loadGameData()
+          } else if (!game) {
+            // If we don't have game yet, reload to check
+            await loadGameData()
+          }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+      })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [gameCode, isSDKLoaded, context])
+  }, [gameCode, isSDKLoaded, context, game])
 
   const handleJoinGame = async () => {
     if (!game || !context) return

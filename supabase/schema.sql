@@ -69,3 +69,10 @@ CREATE INDEX IF NOT EXISTS idx_players_game ON players(game_id);
 CREATE INDEX IF NOT EXISTS idx_players_fid ON players(fid);
 CREATE INDEX IF NOT EXISTS idx_transactions_game ON transactions(game_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_player ON transactions(player_id);
+
+-- Row Level Security (RLS) Policies
+-- For Phase A, we'll disable RLS since we're not using authentication yet
+-- In Phase B, we'll add proper policies based on wallet ownership
+ALTER TABLE games DISABLE ROW LEVEL SECURITY;
+ALTER TABLE players DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
