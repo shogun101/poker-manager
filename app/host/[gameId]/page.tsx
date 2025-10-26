@@ -18,8 +18,10 @@ export default function HostDashboard() {
   const [farcasterUsers, setFarcasterUsers] = useState<Map<number, FarcasterUser>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showEndGameModal, setShowEndGameModal] = useState(false)
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
+  const [showStartGameModal, setShowStartGameModal] = useState(false)
+  const [hostBuyIn, setHostBuyIn] = useState(false)
+  const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
 
   // Load game data
   useEffect(() => {
@@ -53,6 +55,18 @@ export default function HostDashboard() {
 
         if (!playersError && playersData) {
           setPlayers(playersData)
+
+          // Initialize chip counts from database if game is active or ended
+          if (gameData.status !== 'waiting') {
+            const counts: Record<string, string> = {}
+            playersData.forEach(p => {
+              // Use saved final_chip_count if exists, otherwise use total_deposited
+              counts[p.id] = p.final_chip_count > 0
+                ? p.final_chip_count.toString()
+                : p.total_deposited.toString()
+            })
+            setChipCounts(counts)
+          }
 
           // Fetch Farcaster user data for all players
           const fids = playersData.map(p => p.fid)
@@ -93,7 +107,56 @@ export default function HostDashboard() {
   }, [gameId, isSDKLoaded, context])
 
   const handleStartGame = async () => {
-    if (!game) return
+    if (!game || !context) return
+
+    // Show modal to ask if host wants to buy in
+    setShowStartGameModal(true)
+  }
+
+  const confirmStartGame = async () => {
+    if (!game || !context) return
+
+    // If host wants to buy in, add them as a player first
+    if (hostBuyIn) {
+      const hostPlayer = players.find(p => p.fid === context.user.fid)
+
+      if (!hostPlayer) {
+        // Add host as a player
+        const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
+        const { error: playerError } = await supabase
+          .from('players')
+          .insert({
+            game_id: game.id,
+            fid: context.user.fid,
+            wallet_address: walletAddress,
+            total_buy_ins: 1,
+            total_deposited: game.buy_in_amount
+          })
+
+        if (playerError) {
+          console.error('Error adding host as player:', playerError)
+          setError('Failed to add you to the game')
+          return
+        }
+      } else {
+        // Host is already a player, just add a buy-in
+        const { error: buyInError } = await supabase
+          .from('players')
+          .update({
+            total_buy_ins: hostPlayer.total_buy_ins + 1,
+            total_deposited: hostPlayer.total_deposited + game.buy_in_amount,
+          })
+          .eq('id', hostPlayer.id)
+
+        if (buyInError) {
+          console.error('Error adding host buy-in:', buyInError)
+          setError('Failed to add your buy-in')
+          return
+        }
+      }
+    }
+
+    // Start the game
     const { error } = await supabase
       .from('games')
       .update({ status: 'active', started_at: new Date().toISOString() })
@@ -101,19 +164,55 @@ export default function HostDashboard() {
 
     if (!error) {
       setGame({ ...game, status: 'active', started_at: new Date().toISOString() })
+      setShowStartGameModal(false)
+      setHostBuyIn(false)
     }
   }
 
-  const handleEndGame = async () => {
+  const handleCalculateSettlement = async () => {
+    if (!game) return
+    setIsCalculatingSettlement(true)
+
+    const payouts = calculatePayouts()
+
+    // Update all players with their final chip counts and payouts
+    const updates = payouts.map(({ player, chips, payout }) =>
+      supabase
+        .from('players')
+        .update({
+          final_chip_count: chips,
+          payout_amount: payout
+        })
+        .eq('id', player.id)
+    )
+
+    await Promise.all(updates)
+
+    // Mark game as ended
+    const { error } = await supabase
+      .from('games')
+      .update({ status: 'ended', ended_at: new Date().toISOString() })
+      .eq('id', game.id)
+
+    if (!error) {
+      setGame({ ...game, status: 'ended', ended_at: new Date().toISOString() })
+    }
+
+    setIsCalculatingSettlement(false)
+  }
+
+  const handleEditSettlement = async () => {
     if (!game) return
 
-    // Initialize chip counts with current deposited amounts as default
-    const initialCounts: Record<string, string> = {}
-    players.forEach(p => {
-      initialCounts[p.id] = p.total_deposited.toString()
-    })
-    setChipCounts(initialCounts)
-    setShowEndGameModal(true)
+    // Reopen the game for editing
+    const { error } = await supabase
+      .from('games')
+      .update({ status: 'active' })
+      .eq('id', game.id)
+
+    if (!error) {
+      setGame({ ...game, status: 'active' })
+    }
   }
 
   const calculatePayouts = () => {
@@ -145,35 +244,6 @@ export default function HostDashboard() {
     }).sort((a, b) => b.profit - a.profit)
   }
 
-  const confirmEndGame = async () => {
-    if (!game) return
-
-    const payouts = calculatePayouts()
-
-    // Update all players with their final chip counts and payouts
-    const updates = payouts.map(({ player, chips, payout }) =>
-      supabase
-        .from('players')
-        .update({
-          final_chip_count: chips,
-          payout_amount: payout
-        })
-        .eq('id', player.id)
-    )
-
-    await Promise.all(updates)
-
-    // End the game
-    const { error } = await supabase
-      .from('games')
-      .update({ status: 'ended', ended_at: new Date().toISOString() })
-      .eq('id', game.id)
-
-    if (!error) {
-      setGame({ ...game, status: 'ended', ended_at: new Date().toISOString() })
-      setShowEndGameModal(false)
-    }
-  }
 
   const handleAddBuyIn = async (playerId: string) => {
     if (!game) return
@@ -261,32 +331,177 @@ export default function HostDashboard() {
           </div>
         </div>
 
+        {/* Start Game Modal */}
+        {showStartGameModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-black mb-4">Start Game</h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  Would you like to buy in to this game?
+                </p>
+
+                {/* Host Buy-in Option */}
+                <div className="mb-6">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-md cursor-pointer hover:border-gray-300 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={hostBuyIn}
+                      onChange={(e) => setHostBuyIn(e.target.checked)}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-black">Yes, I want to play</p>
+                      <p className="text-xs text-gray-500">
+                        Add {formatCurrency(game.buy_in_amount, game.currency)} buy-in for yourself
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowStartGameModal(false)
+                      setHostBuyIn(false)
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmStartGame}
+                    className="flex-1 px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
+                  >
+                    Start Game
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Game Actions */}
         <div className="mb-6">
           {game.status === 'waiting' && (
             <button
               onClick={handleStartGame}
-              disabled={players.length === 0}
+              disabled={players.length === 0 && !context}
               className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               Start Game
             </button>
           )}
-          {game.status === 'active' && (
-            <button
-              onClick={handleEndGame}
-              className="w-full px-4 py-2.5 bg-white text-black text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              End Game
-            </button>
-          )}
-          {game.status === 'ended' && (
-            <div className="text-sm text-gray-600 text-center py-2">Game ended</div>
-          )}
         </div>
 
-        {/* End Game Modal */}
-        {showEndGameModal && (
+        {/* Settlement Section - Show when game is active or ended */}
+        {game.status !== 'waiting' && players.length > 0 && (
+          <div className="mb-6">
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-black">Game Settlement</h3>
+                {game.status === 'ended' && (
+                  <button
+                    onClick={handleEditSettlement}
+                    className="text-xs text-gray-600 hover:text-black cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* Chip Count Inputs */}
+              <div className="space-y-3 mb-4">
+                {players.map((player) => {
+                  const fcUser = farcasterUsers.get(player.fid)
+                  return (
+                    <div key={player.id} className="flex items-center gap-3">
+                      <Image
+                        src={fcUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.fid}`}
+                        alt={fcUser?.username || `User ${player.fid}`}
+                        width={28}
+                        height={28}
+                        className="rounded-full flex-shrink-0"
+                        unoptimized
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-black truncate">
+                          {fcUser ? `@${fcUser.username}` : `User ${player.fid}`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Deposited: {formatCurrency(player.total_deposited, game.currency)}
+                        </p>
+                      </div>
+                      <div className="w-32">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={chipCounts[player.id] || ''}
+                          onChange={(e) => setChipCounts({ ...chipCounts, [player.id]: e.target.value })}
+                          disabled={game.status === 'ended'}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-gray-400 disabled:bg-gray-50 disabled:text-gray-600"
+                          placeholder="Final chips"
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Settlement Summary */}
+              {calculatePayouts().length > 0 && (
+                <div className="border-t border-gray-200 pt-4 mb-4">
+                  <h4 className="text-xs font-medium text-gray-700 mb-2">Settlement</h4>
+                  <div className="space-y-1.5">
+                    {calculatePayouts().map(({ player, chips, payout, profit }) => {
+                      const fcUser = farcasterUsers.get(player.fid)
+                      const isWinner = profit > 0
+                      const isLoser = profit < 0
+
+                      return (
+                        <div
+                          key={player.id}
+                          className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                            isWinner ? 'bg-green-50' : isLoser ? 'bg-red-50' : 'bg-gray-50'
+                          }`}
+                        >
+                          <span className="font-medium text-black truncate flex-1">
+                            {fcUser ? `@${fcUser.username}` : `User ${player.fid}`}
+                          </span>
+                          <span className={`font-medium ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-gray-600'}`}>
+                            {profit >= 0 ? '+' : ''}{formatCurrency(profit, game.currency)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Calculate Button */}
+              {game.status === 'active' && (
+                <button
+                  onClick={handleCalculateSettlement}
+                  disabled={isCalculatingSettlement || players.some(p => !chipCounts[p.id] || parseFloat(chipCounts[p.id]) < 0)}
+                  className="w-full px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                >
+                  {isCalculatingSettlement ? 'Calculating...' : 'Calculate & Save Settlement'}
+                </button>
+              )}
+
+              {game.status === 'ended' && (
+                <div className="text-xs text-gray-600 text-center py-2">
+                  Settlement calculated • Click "Edit" to adjust
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Old Modal Code - Remove this */}
+        {false && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
