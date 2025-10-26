@@ -10,21 +10,40 @@ export default function Home() {
   const { isSDKLoaded, context, isLoading } = useFarcaster()
   const router = useRouter()
   const [gameCode, setGameCode] = useState('')
-  const [myGames, setMyGames] = useState<Game[]>([])
+  const [myHostedGames, setMyHostedGames] = useState<Game[]>([])
+  const [myJoinedGames, setMyJoinedGames] = useState<Array<Game & { isHost: boolean }>>([])
 
-  // Load user's games
+  // Load user's games (both hosted and joined)
   useEffect(() => {
     if (!context) return
 
     const loadMyGames = async () => {
-      const { data: games } = await supabase
+      // Get games where I'm the host
+      const { data: hostedGames } = await supabase
         .from('games')
         .select('*')
         .eq('host_fid', context.user.fid)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(10)
 
-      if (games) setMyGames(games)
+      if (hostedGames) setMyHostedGames(hostedGames)
+
+      // Get games where I'm a player (but not the host)
+      const { data: players } = await supabase
+        .from('players')
+        .select('game_id, games(*)')
+        .eq('fid', context.user.fid)
+
+      if (players) {
+        const joinedGames = players
+          .map(p => p.games as unknown as Game)
+          .filter(game => game && game.host_fid !== context.user.fid)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 10)
+          .map(game => ({ ...game, isHost: false }))
+
+        setMyJoinedGames(joinedGames)
+      }
     }
 
     loadMyGames()
@@ -58,8 +77,12 @@ export default function Home() {
     }
   }
 
-  const handleOpenGame = (game: Game) => {
+  const handleOpenHostedGame = (game: Game) => {
     router.push(`/host/${game.id}`)
+  }
+
+  const handleOpenJoinedGame = (game: Game) => {
+    router.push(`/game/${game.game_code}`)
   }
 
   return (
@@ -101,15 +124,41 @@ export default function Home() {
           </div>
         </div>
 
-        {/* My Games */}
-        {myGames.length > 0 && (
-          <div>
-            <h2 className="text-sm font-medium text-gray-900 mb-3">Your Games</h2>
+        {/* Games I'm Playing In */}
+        {myJoinedGames.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-gray-900 mb-3">Games I'm Playing</h2>
             <div className="space-y-2">
-              {myGames.map((game) => (
+              {myJoinedGames.map((game) => (
                 <button
                   key={game.id}
-                  onClick={() => handleOpenGame(game)}
+                  onClick={() => handleOpenJoinedGame(game)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-black">{game.game_code}</p>
+                      <p className="text-xs text-gray-500">
+                        {game.buy_in_amount} {game.currency} • {game.status}
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-400">→</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Games I'm Hosting */}
+        {myHostedGames.length > 0 && (
+          <div>
+            <h2 className="text-sm font-medium text-gray-900 mb-3">Games I'm Hosting</h2>
+            <div className="space-y-2">
+              {myHostedGames.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => handleOpenHostedGame(game)}
                   className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center justify-between">

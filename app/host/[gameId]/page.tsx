@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Game, Player } from '@/lib/types'
 import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/utils'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
 
@@ -21,6 +21,7 @@ export default function HostDashboard() {
   const [error, setError] = useState('')
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
+  const fetchedFidsRef = useRef<Set<number>>(new Set())
 
   // Load game data
   useEffect(() => {
@@ -67,11 +68,17 @@ export default function HostDashboard() {
             setChipCounts(counts)
           }
 
-          // Fetch Farcaster user data for all players
+          // Only fetch Farcaster data for new FIDs we haven't fetched yet
           const fids = playersData.map(p => p.fid)
-          if (fids.length > 0) {
-            const users = await getFarcasterUsers(fids)
-            setFarcasterUsers(users)
+          const newFids = fids.filter(fid => !fetchedFidsRef.current.has(fid))
+
+          if (newFids.length > 0) {
+            // Mark as fetched immediately to prevent duplicate requests
+            newFids.forEach(fid => fetchedFidsRef.current.add(fid))
+
+            const newUsers = await getFarcasterUsers(newFids)
+            // Merge with existing users
+            setFarcasterUsers(prev => new Map([...prev, ...newUsers]))
           }
         }
       } catch (err) {

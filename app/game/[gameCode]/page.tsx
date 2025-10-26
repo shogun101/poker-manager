@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Game, Player } from '@/lib/types'
 import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/utils'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 
 export default function PlayerView() {
@@ -20,6 +20,7 @@ export default function PlayerView() {
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState('')
+  const fetchedFidsRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
     if (!gameCode || !isSDKLoaded || !context) return
@@ -60,11 +61,17 @@ export default function PlayerView() {
         if (playersData) {
           setAllPlayers(playersData)
 
-          // Fetch Farcaster user data for all players
+          // Only fetch Farcaster data for new FIDs we haven't fetched yet
           const fids = playersData.map(p => p.fid)
-          if (fids.length > 0) {
-            const users = await getFarcasterUsers(fids)
-            setFarcasterUsers(users)
+          const newFids = fids.filter(fid => !fetchedFidsRef.current.has(fid))
+
+          if (newFids.length > 0) {
+            // Mark as fetched immediately to prevent duplicate requests
+            newFids.forEach(fid => fetchedFidsRef.current.add(fid))
+
+            const newUsers = await getFarcasterUsers(newFids)
+            // Merge with existing users
+            setFarcasterUsers(prev => new Map([...prev, ...newUsers]))
           }
         }
       } catch (err) {
@@ -128,12 +135,22 @@ export default function PlayerView() {
     try {
       const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
 
+      console.log('Joining game with:', {
+        game_id: game.id,
+        fid: context.user.fid,
+        wallet_address: walletAddress,
+        total_buy_ins: 0,
+        total_deposited: 0,
+      })
+
       const { data: newPlayer, error: joinError } = await supabase
         .from('players')
         .insert({
           game_id: game.id,
           fid: context.user.fid,
           wallet_address: walletAddress,
+          total_buy_ins: 0,
+          total_deposited: 0,
         })
         .select()
         .single()
@@ -144,6 +161,7 @@ export default function PlayerView() {
         return
       }
 
+      console.log('Successfully joined game:', newPlayer)
       setPlayer(newPlayer)
     } catch (err) {
       console.error('Error joining game:', err)
@@ -262,7 +280,7 @@ export default function PlayerView() {
         {/* Your Stats */}
         <div className="mb-6">
           <h2 className="text-sm font-medium text-gray-900 mb-3">Your Stats</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="border border-gray-200 rounded-md p-3">
               <p className="text-xs text-gray-600 mb-1">Buy-ins</p>
               <p className="text-sm font-medium text-black">{player.total_buy_ins}</p>
@@ -274,6 +292,35 @@ export default function PlayerView() {
               </p>
             </div>
           </div>
+
+          {/* Buy In Button - Show if player hasn't bought in yet */}
+          {player.total_buy_ins === 0 && game.status !== 'ended' && (
+            <button
+              onClick={async () => {
+                // Phase A: Just update the database
+                // Phase B: This will trigger blockchain transaction
+                const { error } = await supabase
+                  .from('players')
+                  .update({
+                    total_buy_ins: player.total_buy_ins + 1,
+                    total_deposited: player.total_deposited + game.buy_in_amount,
+                  })
+                  .eq('id', player.id)
+
+                if (!error) {
+                  // Update local state
+                  setPlayer({
+                    ...player,
+                    total_buy_ins: player.total_buy_ins + 1,
+                    total_deposited: player.total_deposited + game.buy_in_amount,
+                  })
+                }
+              }}
+              className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
+            >
+              Buy In ({formatCurrency(game.buy_in_amount, game.currency)})
+            </button>
+          )}
         </div>
 
         {/* Players List */}

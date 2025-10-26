@@ -22,6 +22,8 @@ export async function getFarcasterUsers(fids: number[]): Promise<Map<number, Far
     const response = await fetch(`/api/farcaster/user?fids=${fids.join(',')}`)
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Failed to fetch Farcaster users:', response.status, errorText)
       throw new Error('Failed to fetch users')
     }
 

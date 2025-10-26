@@ -14,7 +14,9 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}/game/${gameCode}`
     }
-    return `https://poker-manager.vercel.app/game/${gameCode}`
+    // Fallback for server-side rendering
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://poker-manager.vercel.app'
+    return `${baseUrl}/game/${gameCode}`
   }
 
   const shareUrl = getShareUrl()

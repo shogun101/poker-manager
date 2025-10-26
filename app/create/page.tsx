@@ -63,7 +63,7 @@ export default function CreateGame() {
         return
       }
 
-      // Add host as first player with 1 buy-in
+      // Add host as first player (without buy-in yet)
       const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
       console.log('Adding host as player:', { game_id: game.id, fid: context.user.fid, walletAddress })
 
@@ -73,8 +73,8 @@ export default function CreateGame() {
           game_id: game.id,
           fid: context.user.fid,
           wallet_address: walletAddress,
-          total_buy_ins: 1,
-          total_deposited: parseFloat(buyInAmount)
+          total_buy_ins: 0,
+          total_deposited: 0
         })
         .select()
 
