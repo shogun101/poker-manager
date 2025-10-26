@@ -499,11 +499,16 @@ export default function PlayerView() {
                           </div>
                           <div className="w-32">
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
                               value={chipCounts[p.id] || ''}
-                              onChange={(e) => setChipCounts({ ...chipCounts, [p.id]: e.target.value })}
+                              onChange={(e) => {
+                                // Only allow numbers and decimal point
+                                const value = e.target.value
+                                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                  setChipCounts({ ...chipCounts, [p.id]: value })
+                                }
+                              }}
                               disabled={game.status === 'ended'}
                               className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-gray-400 disabled:bg-gray-50 disabled:text-gray-600"
                               placeholder="Final chips"
