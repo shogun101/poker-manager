@@ -7,6 +7,7 @@ import { formatCurrency, getFarcasterUsers, type FarcasterUser } from '@/lib/uti
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
+import ShareLink from '@/components/ShareLink'
 
 export default function PlayerView() {
   const { gameCode } = useParams()
@@ -297,6 +298,11 @@ export default function PlayerView() {
               {formatCurrency(totalPot, game.currency)}
             </p>
           </div>
+        </div>
+
+        {/* Share Link */}
+        <div className="mb-6">
+          <ShareLink gameCode={game.game_code} />
         </div>
 
         {/* Your Stats */}
