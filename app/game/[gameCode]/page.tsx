@@ -67,15 +67,23 @@ export default function PlayerView() {
           setAllPlayers(playersData)
 
           // Initialize chip counts for host (for settlement)
+          // Only update if we don't have counts yet OR if game just ended (to load final counts)
           if (gameData.status !== 'waiting') {
-            const counts: Record<string, string> = {}
-            playersData.forEach(p => {
-              // Use saved final_chip_count if exists, otherwise use total_deposited
-              counts[p.id] = p.final_chip_count > 0
-                ? p.final_chip_count.toString()
-                : p.total_deposited.toString()
+            setChipCounts(prevCounts => {
+              const counts: Record<string, string> = {}
+              playersData.forEach(p => {
+                // Keep existing value if user is typing, otherwise use database value
+                if (prevCounts[p.id] !== undefined) {
+                  counts[p.id] = prevCounts[p.id]
+                } else {
+                  // Use saved final_chip_count if exists, otherwise use total_deposited
+                  counts[p.id] = p.final_chip_count > 0
+                    ? p.final_chip_count.toString()
+                    : p.total_deposited.toString()
+                }
+              })
+              return counts
             })
-            setChipCounts(counts)
           }
 
           // Only fetch Farcaster data for new FIDs we haven't fetched yet
