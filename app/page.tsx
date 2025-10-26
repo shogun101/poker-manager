@@ -77,11 +77,7 @@ export default function Home() {
     }
   }
 
-  const handleOpenHostedGame = (game: Game) => {
-    router.push(`/host/${game.id}`)
-  }
-
-  const handleOpenJoinedGame = (game: Game) => {
+  const handleOpenGame = (game: Game) => {
     router.push(`/game/${game.game_code}`)
   }
 
@@ -132,7 +128,7 @@ export default function Home() {
               {myJoinedGames.map((game) => (
                 <button
                   key={game.id}
-                  onClick={() => handleOpenJoinedGame(game)}
+                  onClick={() => handleOpenGame(game)}
                   className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -158,7 +154,7 @@ export default function Home() {
               {myHostedGames.map((game) => (
                 <button
                   key={game.id}
-                  onClick={() => handleOpenHostedGame(game)}
+                  onClick={() => handleOpenGame(game)}
                   className="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:border-gray-300 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center justify-between">
