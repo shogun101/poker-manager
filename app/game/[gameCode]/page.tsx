@@ -8,11 +8,26 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
+import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame } from '@/hooks/usePokerEscrow'
+import { parseUSDC } from '@/lib/contracts'
 
 export default function PlayerView() {
   const { gameCode } = useParams()
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
+
+  // Privy wallet hooks
+  const { ready: privyReady, authenticated, login } = usePrivy()
+  const { wallets } = useWallets()
+  const [walletAddress, setWalletAddress] = useState<`0x${string}` | undefined>()
+
+  // Blockchain hooks
+  const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
+  const { depositUSDC, isPending: isDepositingUSDC, isSuccess: depositSuccess } = useDepositUSDC()
+  const { approveUSDC, isPending: isApprovingUSDC, isSuccess: approveSuccess } = useApproveUSDC()
+  const { allowance, refetch: refetchAllowance } = useUSDCAllowance(walletAddress)
+  const { distributePayout, isPending: isDistributing } = useDistributePayout()
 
   const [game, setGame] = useState<Game | null>(null)
   const [player, setPlayer] = useState<Player | null>(null)
@@ -26,6 +41,13 @@ export default function PlayerView() {
   // Host-specific state
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
+
+  // Set wallet address from Privy
+  useEffect(() => {
+    if (wallets.length > 0) {
+      setWalletAddress(wallets[0].address as `0x${string}`)
+    }
+  }, [wallets])
 
   useEffect(() => {
     if (!gameCode || !isSDKLoaded || !context) return
@@ -151,52 +173,97 @@ export default function PlayerView() {
     }
   }, [gameCode, isSDKLoaded, context, game])
 
-  const handleJoinGame = async () => {
+  // Shared buy-in logic for both joining and additional buy-ins
+  const handleBuyIn = async () => {
     if (!game || !context) return
+
+    // Check if wallet is connected
+    if (!authenticated || !walletAddress) {
+      setError('Please connect your wallet first')
+      login()
+      return
+    }
 
     setIsJoining(true)
     setError('')
 
     try {
-      const walletAddress = `0x${context.user.fid.toString().padStart(40, '0')}`
+      // Step 1: Check USDC allowance
+      await refetchAllowance()
+      const requiredAmount = parseUSDC(game.buy_in_amount)
 
-      // Phase A: Simulate transaction by directly adding with 1 buy-in
-      // Phase B: This will trigger actual blockchain transaction first
-      console.log('Joining game with buy-in:', {
-        game_id: game.id,
-        fid: context.user.fid,
-        wallet_address: walletAddress,
-        total_buy_ins: 1,
-        total_deposited: game.buy_in_amount,
-      })
-
-      const { data: newPlayer, error: joinError } = await supabase
-        .from('players')
-        .insert({
-          game_id: game.id,
-          fid: context.user.fid,
-          wallet_address: walletAddress,
-          total_buy_ins: 1,
-          total_deposited: game.buy_in_amount,
-        })
-        .select()
-        .single()
-
-      if (joinError) {
-        console.error('Join error:', joinError)
-        setError('Failed to join game')
-        return
+      // Step 2: Approve USDC if needed
+      if (!allowance || allowance < requiredAmount) {
+        console.log('Approving USDC...')
+        await approveUSDC(game.buy_in_amount)
+        // Wait for approval
+        while (!approveSuccess && isApprovingUSDC) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
       }
 
-      console.log('Successfully joined game:', newPlayer)
-      setPlayer(newPlayer)
+      // Step 3: Deposit USDC to escrow contract
+      console.log('Depositing USDC to escrow...')
+      await depositUSDC(game.id, game.buy_in_amount)
+
+      // Wait for deposit
+      while (!depositSuccess && isDepositingUSDC) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
+      // Step 4: Update database
+      if (player) {
+        // Existing player - additional buy-in
+        const { error } = await supabase
+          .from('players')
+          .update({
+            total_buy_ins: player.total_buy_ins + 1,
+            total_deposited: player.total_deposited + game.buy_in_amount,
+          })
+          .eq('id', player.id)
+
+        if (!error) {
+          setPlayer({
+            ...player,
+            total_buy_ins: player.total_buy_ins + 1,
+            total_deposited: player.total_deposited + game.buy_in_amount,
+          })
+        } else {
+          console.error('Error updating buy-in:', error)
+          setError('Failed to record buy-in')
+        }
+      } else {
+        // New player - joining game
+        const { data: newPlayer, error: joinError } = await supabase
+          .from('players')
+          .insert({
+            game_id: game.id,
+            fid: context.user.fid,
+            wallet_address: walletAddress,
+            total_buy_ins: 1,
+            total_deposited: game.buy_in_amount,
+          })
+          .select()
+          .single()
+
+        if (joinError) {
+          console.error('Join error:', joinError)
+          setError('Failed to record join in database')
+          return
+        }
+
+        console.log('Successfully joined game:', newPlayer)
+        setPlayer(newPlayer)
+      }
     } catch (err) {
-      console.error('Error joining game:', err)
-      setError('Something went wrong')
+      console.error('Error with buy-in:', err)
+      setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsJoining(false)
     }
   }
+
+  const handleJoinGame = handleBuyIn
 
   // Host-specific functions
   const handleStartGame = async () => {
@@ -240,33 +307,54 @@ export default function PlayerView() {
   }
 
   const handleCalculateSettlement = async () => {
-    if (!game) return
+    if (!game || !walletAddress) return
+
     setIsCalculatingSettlement(true)
+    setError('')
 
-    const payouts = calculatePayouts()
+    try {
+      const payouts = calculatePayouts()
 
-    const updates = payouts.map(({ player, chips, payout }) =>
-      supabase
-        .from('players')
-        .update({
-          final_chip_count: chips,
-          payout_amount: payout
-        })
-        .eq('id', player.id)
-    )
+      // Step 1: Distribute payouts on blockchain
+      const playerAddresses = payouts.map(p => p.player.wallet_address)
+      const usdcAmounts = payouts.map(p => p.payout)
+      const ethAmounts = payouts.map(() => 0) // Not using ETH
 
-    await Promise.all(updates)
+      console.log('Distributing payouts on blockchain...')
+      await distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
 
-    const { error } = await supabase
-      .from('games')
-      .update({ status: 'ended', ended_at: new Date().toISOString() })
-      .eq('id', game.id)
+      // Wait for distribution
+      while (isDistributing) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
 
-    if (!error) {
-      setGame({ ...game, status: 'ended', ended_at: new Date().toISOString() })
+      // Step 2: Update database
+      const updates = payouts.map(({ player, chips, payout }) =>
+        supabase
+          .from('players')
+          .update({
+            final_chip_count: chips,
+            payout_amount: payout
+          })
+          .eq('id', player.id)
+      )
+
+      await Promise.all(updates)
+
+      const { error } = await supabase
+        .from('games')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('id', game.id)
+
+      if (!error) {
+        setGame({ ...game, status: 'ended', ended_at: new Date().toISOString() })
+      }
+    } catch (err) {
+      console.error('Error settling game:', err)
+      setError(err instanceof Error ? err.message : 'Failed to settle game')
+    } finally {
+      setIsCalculatingSettlement(false)
     }
-
-    setIsCalculatingSettlement(false)
   }
 
   const handleEditSettlement = async () => {
@@ -424,29 +512,18 @@ export default function PlayerView() {
           {/* Buy In Button - Available for additional buy-ins during game */}
           {game.status !== 'ended' && (
             <button
-              onClick={async () => {
-                // Phase A: Just update the database
-                // Phase B: This will trigger blockchain transaction
-                const { error } = await supabase
-                  .from('players')
-                  .update({
-                    total_buy_ins: player.total_buy_ins + 1,
-                    total_deposited: player.total_deposited + game.buy_in_amount,
-                  })
-                  .eq('id', player.id)
-
-                if (!error) {
-                  // Update local state
-                  setPlayer({
-                    ...player,
-                    total_buy_ins: player.total_buy_ins + 1,
-                    total_deposited: player.total_deposited + game.buy_in_amount,
-                  })
-                }
-              }}
-              className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
+              onClick={handleBuyIn}
+              disabled={isJoining || isApprovingUSDC || isDepositingUSDC}
+              className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
-              {player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} ({formatCurrency(game.buy_in_amount, game.currency)})
+              {isApprovingUSDC
+                ? 'Approving USDC...'
+                : isDepositingUSDC
+                ? 'Depositing...'
+                : isJoining
+                ? 'Processing...'
+                : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
+              }
             </button>
           )}
         </div>

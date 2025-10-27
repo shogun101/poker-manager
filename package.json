@@ -10,10 +10,14 @@
   },
   "dependencies": {
     "@farcaster/frame-sdk": "^0.0.64",
+    "@privy-io/react-auth": "^3.4.1",
+    "@privy-io/wagmi": "^2.0.2",
     "@supabase/supabase-js": "^2.76.1",
     "next": "16.0.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "viem": "^2.38.4",
+    "wagmi": "^2.18.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

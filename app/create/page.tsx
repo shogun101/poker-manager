@@ -5,10 +5,17 @@ import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useCreateGame } from '@/hooks/usePokerEscrow'
 
 export default function CreateGame() {
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
+
+  // Privy and blockchain hooks
+  const { ready: privyReady, authenticated, login } = usePrivy()
+  const { wallets } = useWallets()
+  const { createGame: createGameOnChain, isPending: isCreatingOnChain } = useCreateGame()
 
   // Form state
   const [buyInAmount, setBuyInAmount] = useState('')
@@ -38,13 +45,20 @@ export default function CreateGame() {
       return
     }
 
+    // Check wallet connection
+    if (!authenticated) {
+      setError('Please connect your wallet first')
+      login()
+      return
+    }
+
     setIsCreating(true)
     setError('')
 
     try {
       const gameCode = generateGameCode()
 
-      // Create game in database
+      // Step 1: Create game in database first (to get the ID)
       const { data: game, error: dbError } = await supabase
         .from('games')
         .insert({
@@ -63,12 +77,22 @@ export default function CreateGame() {
         return
       }
 
+      // Step 2: Create game on blockchain using the database ID
+      console.log('Creating game on blockchain...')
+      await createGameOnChain(game.id)
+
+      // Wait for blockchain confirmation
+      while (isCreatingOnChain) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
+      console.log('Game created on blockchain')
+
       // Redirect to game page where host will buy-in (same flow as other players)
-      // Host will see "Join Game for X" button and go through buy-in process
       router.push(`/game/${game.game_code}`)
     } catch (err) {
       console.error('Error creating game:', err)
-      setError('Something went wrong. Please try again.')
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setIsCreating(false)
     }
@@ -155,10 +179,10 @@ export default function CreateGame() {
           {/* Create Button */}
           <button
             onClick={handleCreateGame}
-            disabled={isCreating || !buyInAmount}
+            disabled={isCreating || isCreatingOnChain || !buyInAmount}
             className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
-            {isCreating ? 'Creating...' : 'Create Game'}
+            {isCreatingOnChain ? 'Creating on blockchain...' : isCreating ? 'Creating...' : 'Create Game'}
           </button>
         </div>
       </div>
