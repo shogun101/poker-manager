@@ -8,7 +8,7 @@ export const POKER_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_POKER_ESCROW_ADDRES
 export const USDC_ADDRESS_SEPOLIA = '0x68a97486105B543B1D98Bbfd056f916b337145c1' as `0x${string}` // Mock USDC on Base Sepolia
 
 // Contract ABIs
-export const POKER_ESCROW_ABI = PokerEscrowABI as const
+export const POKER_ESCROW_ABI = PokerEscrowABI
 
 // USDC ABI (minimal - just approve, balanceOf, and mint for testing)
 export const USDC_ABI = [
