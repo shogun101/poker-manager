@@ -15,16 +15,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={privyAppId}
       config={{
-        loginMethods: ['wallet', 'farcaster'],
+        loginMethods: ['farcaster'],
         appearance: {
           theme: 'light',
           accentColor: '#676FFF',
         },
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: 'all-users', // Create embedded wallet for all Farcaster users
+          requireUserPasswordOnCreate: false, // No password needed for testnet
         },
         defaultChain: baseSepolia,
         supportedChains: [baseSepolia],
+        fiatOnRamp: {
+          useSandbox: true, // Enable testnet mode
+        },
       }}
     >
       <QueryClientProvider client={queryClient}>
