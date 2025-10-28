@@ -21,7 +21,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           accentColor: '#676FFF',
         },
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets', // Create embedded wallet for Farcaster users
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
         },
         defaultChain: baseSepolia,
         supportedChains: [baseSepolia],
