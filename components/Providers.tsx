@@ -21,14 +21,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           accentColor: '#676FFF',
         },
         embeddedWallets: {
-          createOnLogin: 'all-users', // Create embedded wallet for all Farcaster users
-          requireUserPasswordOnCreate: false, // No password needed for testnet
+          createOnLogin: 'users-without-wallets', // Create embedded wallet for Farcaster users
         },
         defaultChain: baseSepolia,
         supportedChains: [baseSepolia],
-        fiatOnRamp: {
-          useSandbox: true, // Enable testnet mode
-        },
       }}
     >
       <QueryClientProvider client={queryClient}>
