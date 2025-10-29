@@ -5,16 +5,16 @@ import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useAccount, useConnect } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
 
 export default function CreateGame() {
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
 
-  // Privy and blockchain hooks
-  const { ready: privyReady, authenticated, login } = usePrivy()
-  const { wallets } = useWallets()
+  // Wagmi and blockchain hooks
+  const { address: walletAddress, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
   const { createGame: createGameOnChain, isPending: isCreatingOnChain } = useCreateGame()
 
   // Form state
@@ -46,9 +46,9 @@ export default function CreateGame() {
     }
 
     // Check wallet connection
-    if (!authenticated) {
+    if (!isConnected || !walletAddress) {
       setError('Please connect your wallet first')
-      login()
+      connect({ connector: connectors[0] })
       return
     }
 

@@ -7,9 +7,10 @@ const USE_MAINNET = process.env.NEXT_PUBLIC_USE_MAINNET === 'true'
 const activeChain = USE_MAINNET ? base : baseSepolia
 
 export const wagmiConfig = createConfig({
-  chains: [activeChain],
+  chains: USE_MAINNET ? [base] : [baseSepolia],
   transports: {
-    [activeChain.id]: http(),
+    [base.id]: http(),
+    [baseSepolia.id]: http(),
   },
   connectors: [farcasterFrame()],
 })
