@@ -603,15 +603,19 @@ export default function PlayerView() {
             className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             {buyInStatus === 'approving'
-              ? 'Confirm approval in wallet...'
+              ? 'Approve USDC Spending in Wallet...'
               : buyInStatus === 'depositing'
-              ? 'Confirm deposit in wallet...'
+              ? `Confirm ${formatCurrency(game.buy_in_amount, game.currency)} Deposit in Wallet...`
               : buyInStatus === 'confirming'
-              ? 'Waiting for blockchain confirmation...'
+              ? 'Waiting for Blockchain Confirmation...'
               : isJoining
               ? 'Processing...'
               : game.status === 'ended'
               ? 'Game Ended'
+              : isConnected && allowance && allowance >= parseUSDC(game.buy_in_amount)
+              ? `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)} Now`
+              : isConnected
+              ? `Approve & Join for ${formatCurrency(game.buy_in_amount, game.currency)}`
               : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`
             }
           </button>
@@ -696,14 +700,16 @@ export default function PlayerView() {
                 className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
                 {buyInStatus === 'approving'
-                  ? 'Confirm approval in wallet...'
+                  ? 'Approve USDC Spending in Wallet...'
                   : buyInStatus === 'depositing'
-                  ? 'Confirm deposit in wallet...'
+                  ? `Confirm ${formatCurrency(game.buy_in_amount, game.currency)} Deposit in Wallet...`
                   : buyInStatus === 'confirming'
-                  ? 'Waiting for blockchain confirmation...'
+                  ? 'Waiting for Blockchain Confirmation...'
                   : isJoining
                   ? 'Processing...'
-                  : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
+                  : allowance && allowance >= parseUSDC(game.buy_in_amount)
+                  ? `Buy In Again for ${formatCurrency(game.buy_in_amount, game.currency)} Now`
+                  : `Approve & Buy In for ${formatCurrency(game.buy_in_amount, game.currency)}`
                 }
               </button>
             </>
