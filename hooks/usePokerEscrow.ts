@@ -80,9 +80,12 @@ export function useUSDCAllowance(userAddress: `0x${string}` | undefined) {
     args: userAddress ? [userAddress, POKER_ESCROW_ADDRESS] : undefined,
     query: {
       enabled: !!userAddress,
-      staleTime: 2000,
-      gcTime: 5000,
+      staleTime: 30000, // 30 seconds - don't refetch too often
+      gcTime: 60000, // 1 minute
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      refetchInterval: false, // Disable auto-polling
     },
   })
 
@@ -100,9 +103,12 @@ export function useUSDCBalance(userAddress: `0x${string}` | undefined) {
     args: userAddress ? [userAddress] : undefined,
     query: {
       enabled: !!userAddress,
-      staleTime: 2000,
-      gcTime: 5000,
+      staleTime: 30000, // 30 seconds - don't refetch too often
+      gcTime: 60000, // 1 minute
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      refetchInterval: false, // Disable auto-polling
     },
   })
 
