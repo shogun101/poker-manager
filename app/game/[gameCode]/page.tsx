@@ -9,11 +9,11 @@ import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
+import { useAccount, useSwitchChain } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame, useUSDCBalance } from '@/hooks/usePokerEscrow'
 import { parseUSDC, USDC_ADDRESS } from '@/lib/contracts'
-import { wagmiConfig } from '@/lib/wagmi'
+import { wagmiConfig, activeChain } from '@/lib/wagmi'
 
 export default function PlayerView() {
   const { gameCode } = useParams()
@@ -21,7 +21,8 @@ export default function PlayerView() {
   const router = useRouter()
 
   // Wagmi wallet hooks
-  const { address: walletAddress, isConnected, connector } = useAccount()
+  const { address: walletAddress, isConnected, connector, chain } = useAccount()
+  const { switchChain } = useSwitchChain()
 
   // Blockchain hooks
   const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
@@ -583,6 +584,21 @@ export default function PlayerView() {
               USDC: {USDC_ADDRESS}
             </p>
           </div>
+
+          {/* Network warning */}
+          {isConnected && chain && chain.id !== activeChain.id && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+              <p className="text-xs text-red-800 mb-2">
+                ⚠️ <strong>Wrong Network!</strong> You're on {chain.name} but need to be on {activeChain.name}.
+              </p>
+              <button
+                onClick={() => switchChain?.({ chainId: activeChain.id })}
+                className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Switch to {activeChain.name}
+              </button>
+            </div>
+          )}
 
           {/* Wallet recommendation */}
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
