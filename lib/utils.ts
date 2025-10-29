@@ -16,22 +16,40 @@ export interface FarcasterUser {
 export async function getFarcasterUsers(fids: number[]): Promise<Map<number, FarcasterUser>> {
   const userMap = new Map<number, FarcasterUser>()
 
-  if (fids.length === 0) return userMap
+  if (fids.length === 0) {
+    console.log('getFarcasterUsers: No FIDs provided')
+    return userMap
+  }
 
   try {
+    console.log('Fetching Farcaster users for FIDs:', fids)
     const response = await fetch(`/api/farcaster/user?fids=${fids.join(',')}`)
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Failed to fetch Farcaster users:', response.status, errorText)
-      throw new Error('Failed to fetch users')
+      console.error('Failed to fetch Farcaster users:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        fids
+      })
+      throw new Error(`Failed to fetch users: ${response.status}`)
     }
 
     const data = await response.json()
+    console.log('Farcaster API response:', data)
 
-    data.users?.forEach((user: FarcasterUser) => {
+    if (!data.users || !Array.isArray(data.users)) {
+      console.error('Invalid response format from Farcaster API:', data)
+      return userMap
+    }
+
+    data.users.forEach((user: FarcasterUser) => {
+      console.log('Adding user to map:', user.fid, user.username)
       userMap.set(user.fid, user)
     })
+
+    console.log('Successfully fetched', userMap.size, 'Farcaster users')
   } catch (error) {
     console.error('Error fetching Farcaster users:', error)
   }

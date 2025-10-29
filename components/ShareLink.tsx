@@ -10,7 +10,7 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
   const [copied, setCopied] = useState(false)
 
   // Get the base URL from environment or window location
-  const getShareUrl = () => {
+  const getWebUrl = () => {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}/game/${gameCode}`
     }
@@ -19,7 +19,28 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     return `${baseUrl}/game/${gameCode}`
   }
 
-  const shareUrl = getShareUrl()
+  // Get the domain without protocol for Farcaster deep link
+  const getDomain = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.host
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://poker-manager-murex.vercel.app'
+    return baseUrl.replace('https://', '').replace('http://', '')
+  }
+
+  // Create Farcaster deep link that opens the app directly
+  // Format: https://farcaster.xyz/~/mini-apps/launch?domain=yourdomain.com&path=/game/ABCD123
+  const getFarcasterDeepLink = () => {
+    const domain = getDomain()
+    const path = `/game/${gameCode}`
+    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${encodeURIComponent(path)}`
+  }
+
+  const webUrl = getWebUrl()
+  const farcasterDeepLink = getFarcasterDeepLink()
+  
+  // Use Farcaster deep link as the share URL - this opens Farcaster app directly
+  const shareUrl = farcasterDeepLink
 
   const handleCopy = async () => {
     try {
@@ -31,8 +52,30 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     }
   }
 
+  const handleShare = async () => {
+    // Try native share API first (works great in Farcaster mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my poker game!',
+          text: `Join poker game ${gameCode}`,
+          url: shareUrl,
+        })
+      } catch (err) {
+        // User cancelled or error - fall back to copy
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Share failed:', err)
+          handleCopy()
+        }
+      }
+    } else {
+      // Fallback to copy
+      handleCopy()
+    }
+  }
+
   return (
-    <div className="border border-black/[0.24] border-dashed rounded-xl p-4 bg-[#F5F5F5]">
+    <div className="border border-black/24 border-dashed rounded-xl p-4 bg-[#F5F5F5]">
       <div className="flex flex-col items-center gap-2">
         {/* Header Text */}
         <p className="text-center text-black text-base font-normal tracking-[-1.12px] leading-[90%]" style={{ fontFamily: 'Geist, sans-serif' }}>
@@ -40,22 +83,40 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
         </p>
 
         {/* Link Container */}
-        <div className="w-full bg-white border-2 border-black/[0.12] rounded-xl px-3 py-2.5 flex items-center justify-between gap-2">
+        <div className="w-full bg-white border-2 border-black/12 rounded-xl px-3 py-2.5 flex items-center justify-between gap-2">
           {/* URL Text */}
-          <p className="text-black/[0.88] text-[13px] font-normal tracking-[-0.39px] leading-[90%] truncate flex-1" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-black/88 text-[13px] font-normal tracking-[-0.39px] leading-[90%] truncate flex-1" style={{ fontFamily: 'Inter, sans-serif' }}>
             {shareUrl}
           </p>
 
-          {/* Copy Button */}
-          <button
-            onClick={handleCopy}
-            className="bg-black rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors flex-shrink-0"
-          >
-            <span className="text-white/[0.88] text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-              {copied ? 'Copied!' : 'Copy'}
-            </span>
-          </button>
+          {/* Share/Copy Buttons */}
+          <div className="flex gap-1 shrink-0">
+            {navigator.share && (
+              <button
+                onClick={handleShare}
+                className="bg-purple-600 rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors"
+                title="Share in Farcaster"
+              >
+                <span className="text-white text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  Share
+                </span>
+              </button>
+            )}
+            <button
+              onClick={handleCopy}
+              className="bg-black rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors"
+            >
+              <span className="text-white/88 text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
+                {copied ? 'Copied!' : 'Copy'}
+              </span>
+            </button>
+          </div>
         </div>
+
+        {/* Helper text for Farcaster users */}
+        <p className="text-xs text-gray-500 text-center mt-1">
+          🚀 This link opens Farcaster app directly on mobile
+        </p>
       </div>
     </div>
   )

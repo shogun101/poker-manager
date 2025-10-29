@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
+import WalletModal from '@/components/WalletModal'
 
 export default function CreateGame() {
   const { isSDKLoaded, context } = useFarcaster()
@@ -22,6 +23,7 @@ export default function CreateGame() {
   const [currency, setCurrency] = useState<Currency>('USDC')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Generate a random 6-character game code
   const generateGameCode = (): string => {
@@ -47,8 +49,7 @@ export default function CreateGame() {
 
     // Check wallet connection
     if (!isConnected || !walletAddress) {
-      setError('Please connect your wallet first')
-      connect({ connector: connectors[0] })
+      setError('Please connect your wallet first using the buttons below')
       return
     }
 
@@ -169,22 +170,81 @@ export default function CreateGame() {
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              {error}
+          {/* Wallet Connection Section */}
+          {!isConnected ? (
+            <div>
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Connect Wallet to Continue</h3>
+                <p className="text-xs text-gray-600 mb-4">
+                  Choose how you want to connect your wallet to create the game
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Farcaster Wallet Button */}
+                {connectors.find(c => c.name.toLowerCase().includes('farcaster')) && (
+                  <button
+                    onClick={() => connect({ connector: connectors.find(c => c.name.toLowerCase().includes('farcaster'))! })}
+                    className="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all text-left"
+                  >
+                    <span className="text-2xl">🟣</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-black">Connect Farcaster Wallet</p>
+                      <p className="text-xs text-gray-500">Use your Farcaster Frame wallet</p>
+                    </div>
+                  </button>
+                )}
+
+                {/* External Wallet Button */}
+                <button
+                  onClick={() => setShowWalletModal(true)}
+                  className="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all text-left"
+                >
+                  <span className="text-2xl">💼</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-black">Use External Wallet</p>
+                    <p className="text-xs text-gray-500">MetaMask, Coinbase, WalletConnect, etc.</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Wallet Connected Status */}
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-xs text-green-800">
+                  ✅ Wallet connected: {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
+                  {error}
+                </div>
+              )}
+
+              {/* Create Button */}
+              <button
+                onClick={handleCreateGame}
+                disabled={isCreating || isCreatingOnChain || !buyInAmount}
+                className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                {isCreatingOnChain ? 'Creating on blockchain...' : isCreating ? 'Creating...' : 'Create Game'}
+              </button>
             </div>
           )}
-
-          {/* Create Button */}
-          <button
-            onClick={handleCreateGame}
-            disabled={isCreating || isCreatingOnChain || !buyInAmount}
-            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            {isCreatingOnChain ? 'Creating on blockchain...' : isCreating ? 'Creating...' : 'Create Game'}
-          </button>
         </div>
+
+        {/* Wallet Modal for External Wallets */}
+        <WalletModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          onConnectSuccess={() => {
+            setShowWalletModal(false)
+            setError('')
+          }}
+        />
       </div>
     </div>
   )

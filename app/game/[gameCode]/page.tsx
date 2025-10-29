@@ -360,21 +360,43 @@ export default function PlayerView() {
     } catch (err) {
       console.error('Error with buy-in:', err)
 
-      // Better error messages based on what failed
+      // Detailed error messages based on what failed
       if (err instanceof Error) {
-        if (err.message.includes('User rejected') || err.message.includes('user rejected')) {
-          setError('Transaction cancelled - you did not approve in your wallet')
-        } else if (err.message.includes('Insufficient USDC balance')) {
-          // Error already set, don't override
-        } else if (err.message.includes('Failed to connect wallet')) {
-          setError('Failed to connect wallet. Please try again.')
-        } else if (err.message.includes('insufficient funds')) {
-          setError('Insufficient USDC balance for buy-in')
-        } else {
-          setError(`Transaction failed: ${err.message}`)
+        const errorMessage = err.message.toLowerCase()
+        
+        // User cancelled transaction
+        if (errorMessage.includes('user rejected') || errorMessage.includes('user denied') || errorMessage.includes('rejected')) {
+          setError('❌ Transaction cancelled. Click "Try Again" below when you\'re ready to approve in your wallet.')
+        } 
+        // Insufficient balance errors
+        else if (errorMessage.includes('insufficient usdc balance')) {
+          setError('💰 Insufficient USDC balance. You need to add more USDC to your wallet first.')
+        } 
+        else if (errorMessage.includes('insufficient funds')) {
+          setError('💰 Insufficient funds. Make sure you have enough USDC and ETH for gas fees.')
+        }
+        // Network/connection errors
+        else if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('fetch')) {
+          setError('🌐 Network error. Please check your connection and try again.')
+        }
+        // Wallet connection errors
+        else if (errorMessage.includes('failed to connect wallet') || errorMessage.includes('connector')) {
+          setError('🔌 Failed to connect wallet. Please reconnect your wallet and try again.')
+        }
+        // Contract/blockchain errors
+        else if (errorMessage.includes('execution reverted') || errorMessage.includes('revert')) {
+          setError('⛓️ Transaction failed on blockchain. This might be a contract error. Please try again.')
+        }
+        // Generic transaction failure
+        else if (errorMessage.includes('transaction failed')) {
+          setError('❌ Transaction failed. Please try again. If the problem persists, check your wallet connection.')
+        }
+        // Unknown error with details
+        else {
+          setError(`❌ Transaction failed: ${err.message}. Please try again or contact support.`)
         }
       } else {
-        setError('Transaction failed. Please try again.')
+        setError('❌ An unexpected error occurred. Please try again.')
       }
     } finally {
       setIsJoining(false)
@@ -492,7 +514,25 @@ export default function PlayerView() {
       }
     } catch (err) {
       console.error('Error settling game:', err)
-      setError(err instanceof Error ? err.message : 'Failed to settle game')
+      
+      // Detailed error messages for settlement
+      if (err instanceof Error) {
+        const errorMessage = err.message.toLowerCase()
+        
+        if (errorMessage.includes('user rejected') || errorMessage.includes('user denied') || errorMessage.includes('rejected')) {
+          setError('❌ Settlement cancelled. Click "Try Again" to approve the payout distribution in your wallet.')
+        } else if (errorMessage.includes('insufficient balance')) {
+          setError('⚠️ Insufficient balance in escrow contract. This shouldn\'t happen - please contact support.')
+        } else if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+          setError('🌐 Network error while processing settlement. Please check your connection and try again.')
+        } else if (errorMessage.includes('only host') || errorMessage.includes('onlyhost')) {
+          setError('🔒 Only the game host can distribute payouts.')
+        } else {
+          setError(`❌ Settlement failed: ${err.message}. Please try again.`)
+        }
+      } else {
+        setError('❌ Settlement failed. Please try again.')
+      }
     } finally {
       setIsCalculatingSettlement(false)
     }
@@ -608,8 +648,30 @@ export default function PlayerView() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
-              {error}
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm text-red-800 font-medium mb-1">Error</p>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError('')}
+                  className="text-red-400 hover:text-red-600 text-lg leading-none"
+                  aria-label="Dismiss error"
+                >
+                  ×
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setError('')
+                  handleJoinGame()
+                }}
+                disabled={isJoining}
+                className="mt-3 w-full px-3 py-2 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           )}
 
@@ -845,6 +907,35 @@ export default function PlayerView() {
                           )
                         })}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Error Display for Settlement */}
+                  {error && isHost && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm text-red-800 font-medium mb-1">Error</p>
+                          <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                        <button
+                          onClick={() => setError('')}
+                          className="text-red-400 hover:text-red-600 text-lg leading-none"
+                          aria-label="Dismiss error"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setError('')
+                          handleCalculateSettlement()
+                        }}
+                        disabled={isCalculatingSettlement}
+                        className="mt-3 w-full px-3 py-2 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                      >
+                        Try Again
+                      </button>
                     </div>
                   )}
 
