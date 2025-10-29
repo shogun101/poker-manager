@@ -323,20 +323,61 @@ export default function PlayerView() {
     try {
       const payouts = calculatePayouts()
 
+      // Validate payouts
+      if (payouts.length === 0) {
+        setError('No players to distribute to')
+        return
+      }
+
       // Step 1: Distribute payouts on blockchain
       const playerAddresses = payouts.map(p => p.player.wallet_address)
       const usdcAmounts = payouts.map(p => p.payout)
       const ethAmounts = payouts.map(() => 0) // Not using ETH
 
       console.log('Distributing payouts on blockchain...')
-      await distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
+      console.log('Player addresses:', playerAddresses)
+      console.log('USDC amounts:', usdcAmounts)
 
-      // Wait for distribution
-      while (isDistributing) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+      // Initiate the transaction
+      distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
+
+      // Wait for the user to confirm and for the transaction to be mined
+      console.log('Waiting for distribution transaction to be confirmed...')
+
+      // Wait up to 2 minutes for the transaction
+      let attempts = 0
+      const maxAttempts = 120 // 2 minutes with 1 second intervals
+
+      // First wait for transaction to be pending
+      while (!isDistributing && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        attempts++
+        if (attempts > 10 && !isDistributing) {
+          // User might have rejected the transaction
+          console.log('Transaction not initiated after 10 seconds')
+          setError('Transaction was not initiated. Please try again.')
+          return
+        }
       }
 
+      console.log('Transaction initiated, waiting for confirmation...')
+
+      // Then wait for it to complete
+      attempts = 0
+      while (isDistributing && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        attempts++
+      }
+
+      if (attempts >= maxAttempts) {
+        setError('Transaction timed out. Please check your wallet and try again.')
+        return
+      }
+
+      console.log('Distribution transaction confirmed!')
+
       // Step 2: Update database
+      console.log('Updating database with final settlement...')
       const updates = payouts.map(({ player, chips, payout }) =>
         supabase
           .from('players')
@@ -356,6 +397,10 @@ export default function PlayerView() {
 
       if (!error) {
         setGame({ ...game, status: 'ended', ended_at: new Date().toISOString() })
+        console.log('Settlement complete!')
+      } else {
+        console.error('Database update error:', error)
+        setError('Failed to update game status')
       }
     } catch (err) {
       console.error('Error settling game:', err)
@@ -615,7 +660,7 @@ export default function PlayerView() {
                   {/* Settlement Summary */}
                   {calculatePayouts().length > 0 && (
                     <div className="border-t border-gray-200 pt-4 mb-4">
-                      <h4 className="text-xs font-medium text-gray-700 mb-2">Settlement</h4>
+                      <h4 className="text-xs font-medium text-gray-700 mb-2">Payout Amounts</h4>
                       <div className="space-y-1.5">
                         {calculatePayouts().map(({ player: p, chips, payout, profit }) => {
                           const fcUser = farcasterUsers.get(p.fid)
@@ -629,12 +674,22 @@ export default function PlayerView() {
                                 isWinner ? 'bg-green-50' : isLoser ? 'bg-red-50' : 'bg-gray-50'
                               }`}
                             >
-                              <span className="font-medium text-black truncate flex-1">
-                                {fcUser ? `@${fcUser.username}` : `User ${p.fid}`}
-                              </span>
-                              <span className={`font-medium ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-gray-600'}`}>
-                                {profit >= 0 ? '+' : ''}{formatCurrency(profit, game.currency)}
-                              </span>
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium text-black truncate">
+                                  {fcUser ? `@${fcUser.username}` : `User ${p.fid}`}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {chips} chips • Deposited {formatCurrency(p.total_deposited, game.currency)}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="font-semibold text-black">
+                                  {formatCurrency(payout, game.currency)}
+                                </span>
+                                <span className={`text-xs ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-gray-600'}`}>
+                                  {profit >= 0 ? '+' : ''}{formatCurrency(profit, game.currency)}
+                                </span>
+                              </div>
                             </div>
                           )
                         })}
