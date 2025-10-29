@@ -10,7 +10,7 @@ import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
 import { useAccount, useConnect } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame } from '@/hooks/usePokerEscrow'
+import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame, useUSDCBalance } from '@/hooks/usePokerEscrow'
 import { parseUSDC } from '@/lib/contracts'
 import { wagmiConfig } from '@/lib/wagmi'
 
@@ -28,6 +28,7 @@ export default function PlayerView() {
   const { depositUSDC } = useDepositUSDC()
   const { approveUSDC } = useApproveUSDC()
   const { allowance, refetch: refetchAllowance } = useUSDCAllowance(walletAddress)
+  const { balance: usdcBalance, refetch: refetchBalance } = useUSDCBalance(walletAddress)
   const { distributePayout } = useDistributePayout()
 
   const [game, setGame] = useState<Game | null>(null)
@@ -36,7 +37,7 @@ export default function PlayerView() {
   const [farcasterUsers, setFarcasterUsers] = useState<Map<number, FarcasterUser>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
-  const [buyInStatus, setBuyInStatus] = useState<'idle' | 'approving' | 'depositing'>('idle')
+  const [buyInStatus, setBuyInStatus] = useState<'idle' | 'approving' | 'depositing' | 'confirming'>('idle')
   const [error, setError] = useState('')
   const fetchedFidsRef = useRef<Set<number>>(new Set())
 
@@ -195,11 +196,30 @@ export default function PlayerView() {
 
       console.log('Wallet connected:', walletAddress)
 
-      // Step 1: Check USDC allowance
-      await refetchAllowance()
+      // Step 1: Check USDC balance
+      try {
+        await refetchBalance()
+      } catch (balanceError) {
+        console.warn('Failed to check balance, continuing anyway:', balanceError)
+        // Don't block the transaction if balance check fails - let the contract handle it
+      }
+      
       const requiredAmount = parseUSDC(game.buy_in_amount)
+      
+      // Only check balance if we successfully fetched it
+      if (usdcBalance !== undefined && usdcBalance < requiredAmount) {
+        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${Number(usdcBalance) / 1e6} USDC.`)
+        return
+      }
 
-      // Step 2: Approve USDC if needed
+      // Step 2: Check USDC allowance
+      try {
+        await refetchAllowance()
+      } catch (allowanceError) {
+        console.warn('Failed to check allowance, will try to approve anyway:', allowanceError)
+      }
+
+      // Step 3: Approve USDC if needed
       if (!allowance || allowance < requiredAmount) {
         console.log('Requesting USDC approval...')
         setBuyInStatus('approving')
@@ -213,7 +233,7 @@ export default function PlayerView() {
         console.log('USDC approval confirmed!')
       }
 
-      // Step 3: Deposit USDC to escrow contract
+      // Step 4: Deposit USDC to escrow contract
       console.log('Requesting USDC deposit...')
       setBuyInStatus('depositing')
 
@@ -222,10 +242,11 @@ export default function PlayerView() {
 
       // Wait for deposit to be mined
       console.log('Waiting for deposit confirmation...')
+      setBuyInStatus('confirming')
       await waitForTransactionReceipt(wagmiConfig, { hash: depositHash })
       console.log('USDC deposit confirmed!')
 
-      // Step 4: Update database ONLY after blockchain confirmation
+      // Step 5: Update database ONLY after blockchain confirmation
       console.log('Updating database...')
       if (player) {
         // Existing player - additional buy-in
@@ -489,6 +510,11 @@ export default function PlayerView() {
             <p className="text-xs text-gray-600">
               By joining, {formatCurrency(game.buy_in_amount, game.currency)} will be deposited from your wallet to the game escrow.
             </p>
+            {isConnected && usdcBalance !== undefined && (
+              <p className="text-xs text-gray-500 mt-2">
+                Your balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+              </p>
+            )}
           </div>
 
           {error && (
@@ -502,7 +528,18 @@ export default function PlayerView() {
             disabled={isJoining || game.status === 'ended'}
             className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
-            {isJoining ? 'Processing...' : game.status === 'ended' ? 'Game Ended' : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`}
+            {buyInStatus === 'approving'
+              ? 'Confirm approval in wallet...'
+              : buyInStatus === 'depositing'
+              ? 'Confirm deposit in wallet...'
+              : buyInStatus === 'confirming'
+              ? 'Waiting for blockchain confirmation...'
+              : isJoining
+              ? 'Processing...'
+              : game.status === 'ended'
+              ? 'Game Ended'
+              : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`
+            }
           </button>
         </div>
       </div>
@@ -566,20 +603,29 @@ export default function PlayerView() {
 
           {/* Buy In Button - Available for additional buy-ins during game */}
           {game.status !== 'ended' && (
-            <button
-              onClick={handleBuyIn}
-              disabled={isJoining}
-              className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-            >
-              {buyInStatus === 'approving'
-                ? 'Confirm approval in wallet...'
-                : buyInStatus === 'depositing'
-                ? 'Confirm deposit in wallet...'
-                : isJoining
-                ? 'Processing...'
-                : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
-              }
-            </button>
+            <>
+              {usdcBalance !== undefined && (
+                <p className="text-xs text-gray-500 mb-2">
+                  Your USDC balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+                </p>
+              )}
+              <button
+                onClick={handleBuyIn}
+                disabled={isJoining}
+                className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                {buyInStatus === 'approving'
+                  ? 'Confirm approval in wallet...'
+                  : buyInStatus === 'depositing'
+                  ? 'Confirm deposit in wallet...'
+                  : buyInStatus === 'confirming'
+                  ? 'Waiting for blockchain confirmation...'
+                  : isJoining
+                  ? 'Processing...'
+                  : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
+                }
+              </button>
+            </>
           )}
         </div>
 
@@ -626,7 +672,7 @@ export default function PlayerView() {
                             alt={fcUser?.username || `User ${p.fid}`}
                             width={28}
                             height={28}
-                            className="rounded-full flex-shrink-0"
+                            className="rounded-full shrink-0"
                             unoptimized
                           />
                           <div className="flex-1 min-w-0">

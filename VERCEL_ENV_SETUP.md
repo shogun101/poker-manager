@@ -20,9 +20,12 @@ NEYNAR_API_KEY=616FB584-1B0B-4399-9C0D-FC7F7BDDCAAE
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 NEXT_PUBLIC_PRIVY_APP_ID=cmh8no0qe00b8ju0epf8yh1hz
 NEXT_PUBLIC_POKER_ESCROW_ADDRESS=0xc88419EC9dF535A5f2D96B433FC08033524cF47a
-NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://sepolia.base.org
+NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=4d35c7f4c8093647adc2a824416fe5e5
+NEXT_PUBLIC_USE_MAINNET=false
 ```
+
+**IMPORTANT**: Replace `YOUR_API_KEY` with your actual Alchemy API key. See `BASE_SEPOLIA_RPC_SETUP.md` for instructions on getting this.
 
 **Important**: For `NEXT_PUBLIC_APP_URL`, use your actual Vercel deployment URL (e.g., `https://poker-manager.vercel.app`)
 
