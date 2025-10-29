@@ -26,6 +26,7 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
       try {
         // Initialize the Farcaster Frame SDK
         const frameContext = await sdk.context
+        console.log('Farcaster context loaded:', frameContext)
 
         // Mark SDK as ready
         setContext(frameContext)
@@ -33,8 +34,11 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
 
         // Tell Farcaster the frame is ready
         sdk.actions.ready()
+        console.log('Farcaster SDK ready called')
       } catch (error) {
         console.error('Failed to initialize Farcaster SDK:', error)
+        // Still call ready even if there's an error, to dismiss splash screen
+        sdk.actions.ready()
       } finally {
         setIsLoading(false)
       }
