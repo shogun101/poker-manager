@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
-import WalletModal from '@/components/WalletModal'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame, useUSDCBalance } from '@/hooks/usePokerEscrow'
@@ -22,7 +22,6 @@ export default function PlayerView() {
 
   // Wagmi wallet hooks
   const { address: walletAddress, isConnected, connector } = useAccount()
-  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Blockchain hooks
   const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
@@ -199,8 +198,8 @@ export default function PlayerView() {
     try {
       // Step 0: Ensure wallet is connected
       if (!isConnected || !walletAddress) {
-        console.log('No wallet connected, showing wallet modal...')
-        setShowWalletModal(true)
+        console.log('No wallet connected, user needs to connect first')
+        setError('Please connect your wallet first')
         setIsJoining(false)
         setPauseSubscription(false)
         return
@@ -596,18 +595,14 @@ export default function PlayerView() {
               : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`
             }
           </button>
-        </div>
 
-        {/* Wallet Modal */}
-        <WalletModal
-          isOpen={showWalletModal}
-          onClose={() => setShowWalletModal(false)}
-          onConnectSuccess={() => {
-            setShowWalletModal(false)
-            // After successful connection, trigger buy-in automatically
-            setTimeout(() => handleBuyIn(), 500)
-          }}
-        />
+          {/* Show Connect Button if not connected */}
+          {!isConnected && (
+            <div className="mt-4">
+              <ConnectButton />
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -674,19 +669,6 @@ export default function PlayerView() {
                 <p className="text-xs text-gray-500 mb-2">
                   Your USDC balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
                 </p>
-              )}
-              {connector?.name.toLowerCase().includes('farcaster') && (
-                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-xs text-yellow-800">
-                    Having issues? Try using{' '}
-                    <button
-                      onClick={() => setShowWalletModal(true)}
-                      className="underline font-medium"
-                    >
-                      a different wallet
-                    </button>
-                  </p>
-                </div>
               )}
               <button
                 onClick={handleBuyIn}
@@ -885,17 +867,6 @@ export default function PlayerView() {
             })}
           </div>
         </div>
-
-        {/* Wallet Modal */}
-        <WalletModal
-          isOpen={showWalletModal}
-          onClose={() => setShowWalletModal(false)}
-          onConnectSuccess={() => {
-            setShowWalletModal(false)
-            // After successful connection, trigger buy-in automatically
-            setTimeout(() => handleBuyIn(), 500)
-          }}
-        />
       </div>
     </div>
   )
