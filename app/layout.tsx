@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   other: {
     "fc:frame": "vNext",
-    "fc:frame:image": "https://poker-manager.vercel.app/og-image.png",
+    "fc:frame:image": "https://poker-manager-murex.vercel.app/og-image.png",
   },
 };
 
