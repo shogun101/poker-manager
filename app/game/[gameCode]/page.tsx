@@ -25,8 +25,8 @@ export default function PlayerView() {
 
   // Blockchain hooks
   const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
-  const { depositUSDC, isPending: isDepositingUSDC, isSuccess: depositSuccess } = useDepositUSDC()
-  const { approveUSDC, isPending: isApprovingUSDC, isSuccess: approveSuccess } = useApproveUSDC()
+  const { depositUSDC } = useDepositUSDC()
+  const { approveUSDC } = useApproveUSDC()
   const { allowance, refetch: refetchAllowance } = useUSDCAllowance(walletAddress)
   const { distributePayout } = useDistributePayout()
 
@@ -199,22 +199,23 @@ export default function PlayerView() {
 
       // Step 2: Approve USDC if needed
       if (!allowance || allowance < requiredAmount) {
-        console.log('Approving USDC...')
-        await approveUSDC(game.buy_in_amount)
-        // Wait for approval
-        while (!approveSuccess && isApprovingUSDC) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
+        console.log('Approving USDC spend...')
+        const approveHash = await approveUSDC(game.buy_in_amount)
+        console.log('Approval transaction submitted:', approveHash)
+
+        // Wait for approval to be mined
+        await waitForTransactionReceipt(wagmiConfig, { hash: approveHash })
+        console.log('USDC approval confirmed!')
       }
 
       // Step 3: Deposit USDC to escrow contract
       console.log('Depositing USDC to escrow...')
-      await depositUSDC(game.id, game.buy_in_amount)
+      const depositHash = await depositUSDC(game.id, game.buy_in_amount)
+      console.log('Deposit transaction submitted:', depositHash)
 
-      // Wait for deposit
-      while (!depositSuccess && isDepositingUSDC) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
+      // Wait for deposit to be mined
+      await waitForTransactionReceipt(wagmiConfig, { hash: depositHash })
+      console.log('USDC deposit confirmed!')
 
       // Step 4: Update database
       if (player) {
@@ -544,15 +545,11 @@ export default function PlayerView() {
           {game.status !== 'ended' && (
             <button
               onClick={handleBuyIn}
-              disabled={isJoining || isApprovingUSDC || isDepositingUSDC}
+              disabled={isJoining}
               className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
-              {isApprovingUSDC
-                ? 'Approving USDC...'
-                : isDepositingUSDC
-                ? 'Depositing...'
-                : isJoining
-                ? 'Processing...'
+              {isJoining
+                ? 'Processing transaction...'
                 : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
               }
             </button>

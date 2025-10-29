@@ -26,51 +26,45 @@ export function useCreateGame() {
 }
 
 export function useDepositUSDC() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { writeContractAsync } = useWriteContract()
 
   const depositUSDC = async (gameId: string, amount: number) => {
     const gameIdBytes = uuidToBytes32(gameId)
     const amountBigInt = parseUSDC(amount)
 
-    writeContract({
+    const hash = await writeContractAsync({
       address: POKER_ESCROW_ADDRESS,
       abi: POKER_ESCROW_ABI,
       functionName: 'depositUSDC',
       args: [gameIdBytes, amountBigInt],
     })
+
+    return hash
   }
 
   return {
     depositUSDC,
-    hash,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    error,
   }
 }
 
 export function useApproveUSDC() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { writeContractAsync } = useWriteContract()
 
   const approveUSDC = async (amount: number) => {
     const amountBigInt = parseUSDC(amount)
 
-    writeContract({
+    const hash = await writeContractAsync({
       address: USDC_ADDRESS,
       abi: USDC_ABI,
       functionName: 'approve',
       args: [POKER_ESCROW_ADDRESS, amountBigInt],
     })
+
+    return hash
   }
 
   return {
     approveUSDC,
-    hash,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    error,
   }
 }
 
@@ -134,47 +128,5 @@ export function useDistributePayout() {
 
   return {
     distributePayout,
-  }
-}
-
-// Combined hook for handling the full buy-in flow (approve + deposit)
-export function useBuyIn() {
-  const [step, setStep] = useState<'idle' | 'approving' | 'depositing' | 'complete'>('idle')
-  const { approveUSDC, isPending: isApproving, isSuccess: approveSuccess } = useApproveUSDC()
-  const { depositUSDC, isPending: isDepositing, isSuccess: depositSuccess } = useDepositUSDC()
-  const { allowance, refetch: refetchAllowance } = useUSDCAllowance(undefined) // Will need actual address
-
-  const buyIn = async (gameId: string, amount: number, userAddress: `0x${string}`) => {
-    try {
-      setStep('approving')
-
-      // Check if we need to approve
-      await refetchAllowance()
-      const amountBigInt = parseUSDC(amount)
-
-      if (!allowance || allowance < amountBigInt) {
-        await approveUSDC(amount)
-        // Wait for approval to complete
-        while (!approveSuccess) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-      }
-
-      setStep('depositing')
-      await depositUSDC(gameId, amount)
-
-      setStep('complete')
-    } catch (error) {
-      setStep('idle')
-      throw error
-    }
-  }
-
-  return {
-    buyIn,
-    step,
-    isPending: isApproving || isDepositing,
-    isApproving,
-    isDepositing,
   }
 }
