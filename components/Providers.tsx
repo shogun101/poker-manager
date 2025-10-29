@@ -20,11 +20,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           theme: 'light',
           accentColor: '#676FFF',
         },
-        embeddedWallets: {
-          ethereum: {
-            createOnLogin: 'users-without-wallets',
-          },
-        },
         defaultChain: baseSepolia,
         supportedChains: [baseSepolia],
       }}
