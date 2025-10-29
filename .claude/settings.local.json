@@ -36,7 +36,8 @@
       "Bash(forge build:*)",
       "Bash(forge test:*)",
       "Bash(forge script:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(forge create:*)"
     ],
     "deny": [],
     "ask": []

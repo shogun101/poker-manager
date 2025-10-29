@@ -1,5 +1,5 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
-import { POKER_ESCROW_ABI, POKER_ESCROW_ADDRESS, USDC_ABI, USDC_ADDRESS_SEPOLIA, parseUSDC, uuidToBytes32 } from '@/lib/contracts'
+import { POKER_ESCROW_ABI, POKER_ESCROW_ADDRESS, USDC_ABI, USDC_ADDRESS, parseUSDC, uuidToBytes32 } from '@/lib/contracts'
 import { useState } from 'react'
 
 export function useCreateGame() {
@@ -58,7 +58,7 @@ export function useApproveUSDC() {
     const amountBigInt = parseUSDC(amount)
 
     writeContract({
-      address: USDC_ADDRESS_SEPOLIA,
+      address: USDC_ADDRESS,
       abi: USDC_ABI,
       functionName: 'approve',
       args: [POKER_ESCROW_ADDRESS, amountBigInt],
@@ -76,7 +76,7 @@ export function useApproveUSDC() {
 
 export function useUSDCAllowance(userAddress: `0x${string}` | undefined) {
   const { data: allowance, refetch } = useReadContract({
-    address: USDC_ADDRESS_SEPOLIA,
+    address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: 'allowance',
     args: userAddress ? [userAddress, POKER_ESCROW_ADDRESS] : undefined,
@@ -93,7 +93,7 @@ export function useUSDCAllowance(userAddress: `0x${string}` | undefined) {
 
 export function useUSDCBalance(userAddress: `0x${string}` | undefined) {
   const { data: balance, refetch } = useReadContract({
-    address: USDC_ADDRESS_SEPOLIA,
+    address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: 'balanceOf',
     args: userAddress ? [userAddress] : undefined,
