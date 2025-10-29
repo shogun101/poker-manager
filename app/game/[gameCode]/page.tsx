@@ -259,13 +259,8 @@ export default function PlayerView() {
         const approvalAmount = game.buy_in_amount * 10
         console.log('Approval amount:', approvalAmount, 'USDC =', parseUSDC(approvalAmount).toString(), 'raw')
 
-        try {
-          const approveHash = await approveUSDC(approvalAmount)
-          console.log('Approval transaction submitted:', approveHash)
-        } catch (approveError) {
-          console.error('Approval failed:', approveError)
-          throw approveError
-        }
+        const approveHash = await approveUSDC(approvalAmount)
+        console.log('Approval transaction submitted:', approveHash)
 
         // Wait for approval to be mined
         console.log('Waiting for approval confirmation...')
