@@ -305,6 +305,16 @@ export default function PlayerView() {
             total_deposited: player.total_deposited + game.buy_in_amount,
           })
           console.log('Buy-in recorded successfully!')
+
+          // Manually refetch all players to ensure list is updated
+          const { data: updatedPlayers } = await supabase
+            .from('players')
+            .select('*')
+            .eq('game_id', game.id)
+            .order('created_at', { ascending: true })
+          if (updatedPlayers) {
+            setAllPlayers(updatedPlayers)
+          }
         } else {
           console.error('Error updating buy-in:', error)
           setError('Blockchain transaction succeeded but failed to record in database. Contact support.')
@@ -335,6 +345,16 @@ export default function PlayerView() {
 
         console.log('Successfully joined game:', newPlayer)
         setPlayer(newPlayer)
+
+        // Manually refetch all players to ensure list is updated
+        const { data: updatedPlayers } = await supabase
+          .from('players')
+          .select('*')
+          .eq('game_id', game.id)
+          .order('created_at', { ascending: true })
+        if (updatedPlayers) {
+          setAllPlayers(updatedPlayers)
+        }
       }
     } catch (err) {
       console.error('Error with buy-in:', err)
