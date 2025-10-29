@@ -29,15 +29,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Only load Farcaster Frame SDK on mainnet
+  const isMainnet = process.env.NEXT_PUBLIC_USE_MAINNET === 'true'
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <FarcasterProvider>
-            {children}
-          </FarcasterProvider>
+          {isMainnet ? (
+            <FarcasterProvider>
+              {children}
+            </FarcasterProvider>
+          ) : (
+            children
+          )}
         </Providers>
       </body>
     </html>

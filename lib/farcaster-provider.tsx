@@ -56,5 +56,14 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
 
 // Hook to use Farcaster context in components
 export function useFarcaster() {
-  return useContext(FarcasterContext)
+  const context = useContext(FarcasterContext)
+  // If FarcasterProvider is not loaded (testnet), return default values
+  if (!context) {
+    return {
+      isSDKLoaded: false,
+      context: null,
+      isLoading: false,
+    }
+  }
+  return context
 }
