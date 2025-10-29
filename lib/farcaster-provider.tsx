@@ -24,7 +24,7 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initFrame = async () => {
       try {
-        // Initialize the Farcaster Frame SDK
+        // Initialize the Farcaster Frame SDK (but don't auto-connect wallet)
         const frameContext = await sdk.context
         console.log('Farcaster context loaded:', frameContext)
 
@@ -32,7 +32,7 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
         setContext(frameContext)
         setIsSDKLoaded(true)
 
-        // Tell Farcaster the frame is ready
+        // Tell Farcaster the frame is ready (this dismisses splash screen)
         sdk.actions.ready()
         console.log('Farcaster SDK ready called')
       } catch (error) {
