@@ -229,12 +229,20 @@ export default function PlayerView() {
         }
       } else {
         // New player - joining game
+        // Get the current wallet address (it should be available after transaction)
+        const currentWalletAddress = wallets.length > 0 ? wallets[0].address : walletAddress
+
+        if (!currentWalletAddress) {
+          setError('Wallet address not found. Please try again.')
+          return
+        }
+
         const { data: newPlayer, error: joinError } = await supabase
           .from('players')
           .insert({
             game_id: game.id,
             fid: context.user.fid,
-            wallet_address: walletAddress,
+            wallet_address: currentWalletAddress,
             total_buy_ins: 1,
             total_deposited: game.buy_in_amount,
           })
@@ -249,6 +257,7 @@ export default function PlayerView() {
 
         console.log('Successfully joined game:', newPlayer)
         setPlayer(newPlayer)
+        setWalletAddress(currentWalletAddress as `0x${string}`)
       }
     } catch (err) {
       console.error('Error with buy-in:', err)
