@@ -189,8 +189,7 @@ export default function PlayerView() {
           attempts++
         }
         if (!isConnected || !walletAddress) {
-          setError('Please connect your wallet to continue')
-          return
+          throw new Error('Failed to connect wallet')
         }
       }
 
@@ -208,8 +207,10 @@ export default function PlayerView() {
       
       // Only check balance if we successfully fetched it
       if (usdcBalance !== undefined && usdcBalance < requiredAmount) {
-        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${Number(usdcBalance) / 1e6} USDC.`)
-        return
+        const currentBalance = Number(usdcBalance) / 1e6
+        const mintGuideUrl = 'https://github.com/yourusername/poker-manager/blob/main/HOW_TO_MINT_USDC.md'
+        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${currentBalance.toFixed(2)} USDC. You need to get testnet USDC first.`)
+        throw new Error(`Insufficient USDC balance: need ${game.buy_in_amount}, have ${currentBalance.toFixed(2)}`)
       }
 
       // Step 2: Check USDC allowance
@@ -280,8 +281,7 @@ export default function PlayerView() {
       } else {
         // New player - joining game
         if (!walletAddress) {
-          setError('Wallet address not found. Please try again.')
-          return
+          throw new Error('Wallet address not found')
         }
 
         const { data: newPlayer, error: joinError } = await supabase
@@ -312,6 +312,10 @@ export default function PlayerView() {
       if (err instanceof Error) {
         if (err.message.includes('User rejected') || err.message.includes('user rejected')) {
           setError('Transaction cancelled - you did not approve in your wallet')
+        } else if (err.message.includes('Insufficient USDC balance')) {
+          // Error already set, don't override
+        } else if (err.message.includes('Failed to connect wallet')) {
+          setError('Failed to connect wallet. Please try again.')
         } else if (err.message.includes('insufficient funds')) {
           setError('Insufficient USDC balance for buy-in')
         } else {
