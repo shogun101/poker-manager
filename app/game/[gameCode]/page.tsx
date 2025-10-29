@@ -8,7 +8,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
-import { useAccount, useConnect } from 'wagmi'
+import WalletModal from '@/components/WalletModal'
+import { useAccount } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame, useUSDCBalance } from '@/hooks/usePokerEscrow'
 import { parseUSDC, USDC_ADDRESS } from '@/lib/contracts'
@@ -21,7 +22,7 @@ export default function PlayerView() {
 
   // Wagmi wallet hooks
   const { address: walletAddress, isConnected } = useAccount()
-  const { connect, connectors } = useConnect()
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Blockchain hooks
   const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
@@ -44,11 +45,18 @@ export default function PlayerView() {
   // Host-specific state
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
+  const [pauseSubscription, setPauseSubscription] = useState(false)
 
   useEffect(() => {
     if (!gameCode || !isSDKLoaded || !context) return
 
     const loadGameData = async () => {
+      // Skip if we're in the middle of a transaction
+      if (pauseSubscription) {
+        console.log('Skipping data reload during transaction')
+        return
+      }
+
       try {
         const { data: gameData, error: gameError } = await supabase
           .from('games')
@@ -56,7 +64,17 @@ export default function PlayerView() {
           .eq('game_code', gameCode)
           .single()
 
-        if (gameError || !gameData) {
+        if (gameError) {
+          console.warn('Error loading game data:', gameError)
+          // Don't set error state if we're just having subscription issues
+          if (!game) {
+            setError('Game not found')
+            setIsLoading(false)
+          }
+          return
+        }
+
+        if (!gameData) {
           setError('Game not found')
           setIsLoading(false)
           return
@@ -176,21 +194,16 @@ export default function PlayerView() {
     setIsJoining(true)
     setBuyInStatus('idle')
     setError('')
+    setPauseSubscription(true) // Pause subscriptions during transaction
 
     try {
       // Step 0: Ensure wallet is connected
       if (!isConnected || !walletAddress) {
-        console.log('No wallet connected, connecting via Farcaster...')
-        connect({ connector: connectors[0] })
-        // Wait for wallet to be connected
-        let attempts = 0
-        while (!isConnected && attempts < 20) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-          attempts++
-        }
-        if (!isConnected || !walletAddress) {
-          throw new Error('Failed to connect wallet')
-        }
+        console.log('No wallet connected, showing wallet modal...')
+        setShowWalletModal(true)
+        setIsJoining(false)
+        setPauseSubscription(false)
+        return
       }
 
       console.log('Wallet connected:', walletAddress)
@@ -336,6 +349,7 @@ export default function PlayerView() {
     } finally {
       setIsJoining(false)
       setBuyInStatus('idle')
+      setPauseSubscription(false) // Resume subscriptions
     }
   }
 
@@ -566,6 +580,17 @@ export default function PlayerView() {
             }
           </button>
         </div>
+
+        {/* Wallet Modal */}
+        <WalletModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          onConnectSuccess={() => {
+            setShowWalletModal(false)
+            // After successful connection, trigger buy-in automatically
+            setTimeout(() => handleBuyIn(), 500)
+          }}
+        />
       </div>
     )
   }
@@ -830,6 +855,17 @@ export default function PlayerView() {
             })}
           </div>
         </div>
+
+        {/* Wallet Modal */}
+        <WalletModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          onConnectSuccess={() => {
+            setShowWalletModal(false)
+            // After successful connection, trigger buy-in automatically
+            setTimeout(() => handleBuyIn(), 500)
+          }}
+        />
       </div>
     </div>
   )

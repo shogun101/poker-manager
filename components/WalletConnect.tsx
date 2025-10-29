@@ -1,32 +1,35 @@
 'use client'
 
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { useAccount, useDisconnect, useConnections } from 'wagmi'
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { formatUSDC } from '@/lib/contracts'
 import { useUSDCBalance } from '@/hooks/usePokerEscrow'
+import { useState } from 'react'
+import WalletModal from './WalletModal'
 
 export default function WalletConnect() {
-  const { address: walletAddress, isConnected } = useAccount()
-  const { connect, connectors } = useConnect()
+  const { address: walletAddress, isConnected, connector } = useAccount()
   const { disconnect } = useDisconnect()
   const { context } = useFarcaster()
+  const connections = useConnections()
 
   const { balance: usdcBalance } = useUSDCBalance(walletAddress)
-
-  const handleConnect = () => {
-    if (connectors[0]) {
-      connect({ connector: connectors[0] })
-    }
-  }
+  const [showModal, setShowModal] = useState(false)
 
   if (!isConnected) {
     return (
-      <button
-        onClick={handleConnect}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        Connect Wallet
-      </button>
+      <>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Connect Wallet
+        </button>
+        <WalletModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+        />
+      </>
     )
   }
 
@@ -38,6 +41,11 @@ export default function WalletConnect() {
           {walletAddress && (
             <div className="text-gray-500 text-xs font-mono">
               {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            </div>
+          )}
+          {connector && (
+            <div className="text-gray-400 text-xs">
+              via {connector.name}
             </div>
           )}
         </div>
