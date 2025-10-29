@@ -1,4 +1,4 @@
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from 'wagmi'
 import { POKER_ESCROW_ABI, POKER_ESCROW_ADDRESS, USDC_ABI, USDC_ADDRESS, parseUSDC, uuidToBytes32 } from '@/lib/contracts'
 import { useState } from 'react'
 
@@ -27,6 +27,7 @@ export function useCreateGame() {
 
 export function useDepositUSDC() {
   const { writeContractAsync } = useWriteContract()
+  const chainId = useChainId()
 
   const depositUSDC = async (gameId: string, amount: number) => {
     const gameIdBytes = uuidToBytes32(gameId)
@@ -37,6 +38,7 @@ export function useDepositUSDC() {
       abi: POKER_ESCROW_ABI,
       functionName: 'depositUSDC',
       args: [gameIdBytes, amountBigInt],
+      chainId,
     })
 
     return hash
@@ -49,6 +51,7 @@ export function useDepositUSDC() {
 
 export function useApproveUSDC() {
   const { writeContractAsync } = useWriteContract()
+  const chainId = useChainId()
 
   const approveUSDC = async (amount: number) => {
     const amountBigInt = parseUSDC(amount)
@@ -58,6 +61,7 @@ export function useApproveUSDC() {
       abi: USDC_ABI,
       functionName: 'approve',
       args: [POKER_ESCROW_ADDRESS, amountBigInt],
+      chainId,
     })
 
     return hash
@@ -110,6 +114,7 @@ export function useUSDCBalance(userAddress: `0x${string}` | undefined) {
 
 export function useDistributePayout() {
   const { writeContractAsync } = useWriteContract()
+  const chainId = useChainId()
 
   const distributePayout = async (
     gameId: string,
@@ -127,6 +132,7 @@ export function useDistributePayout() {
       abi: POKER_ESCROW_ABI,
       functionName: 'distributePayout',
       args: [gameIdBytes, players as `0x${string}`[], usdcBigInts, ethBigInts],
+      chainId,
     })
 
     return hash

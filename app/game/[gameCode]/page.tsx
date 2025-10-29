@@ -224,13 +224,21 @@ export default function PlayerView() {
         console.log('Requesting USDC approval...')
         setBuyInStatus('approving')
 
-        const approveHash = await approveUSDC(game.buy_in_amount)
+        // Approve 10x the buy-in amount to avoid needing multiple approvals
+        const approvalAmount = game.buy_in_amount * 10
+        const approveHash = await approveUSDC(approvalAmount)
         console.log('Approval transaction submitted:', approveHash)
 
         // Wait for approval to be mined
         console.log('Waiting for approval confirmation...')
+        setBuyInStatus('confirming')
         await waitForTransactionReceipt(wagmiConfig, { hash: approveHash })
         console.log('USDC approval confirmed!')
+        
+        // Refetch allowance to ensure it's updated
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second for state to sync
+        await refetchAllowance()
+        console.log('Allowance refetched after approval')
       }
 
       // Step 4: Deposit USDC to escrow contract

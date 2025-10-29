@@ -24,7 +24,10 @@ export const wagmiConfig = createConfig({
       retryDelay: 1000,
     }),
   },
-  connectors: [farcasterFrame()],
+  connectors: [
+    farcasterFrame(),
+  ],
+  ssr: true,
 })
 
 export { activeChain }
