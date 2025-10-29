@@ -21,7 +21,7 @@ export default function PlayerView() {
   const router = useRouter()
 
   // Wagmi wallet hooks
-  const { address: walletAddress, isConnected } = useAccount()
+  const { address: walletAddress, isConnected, connector } = useAccount()
   const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Blockchain hooks
@@ -236,21 +236,36 @@ export default function PlayerView() {
       }
 
       // Step 2: Check USDC allowance
+      console.log('Checking USDC allowance...')
       try {
         await refetchAllowance()
+        console.log('Current allowance:', allowance?.toString() || 'undefined')
       } catch (allowanceError) {
         console.warn('Failed to check allowance, will try to approve anyway:', allowanceError)
       }
 
       // Step 3: Approve USDC if needed
-      if (!allowance || allowance < requiredAmount) {
+      const needsApproval = !allowance || allowance < requiredAmount
+      console.log('Needs approval?', needsApproval, '(allowance:', allowance?.toString(), 'required:', requiredAmount.toString(), ')')
+
+      if (needsApproval) {
         console.log('Requesting USDC approval...')
+        console.log('Current connector:', connector?.name)
+        console.log('USDC Address:', USDC_ADDRESS)
+        console.log('Escrow Address:', require('@/lib/contracts').POKER_ESCROW_ADDRESS)
         setBuyInStatus('approving')
 
         // Approve 10x the buy-in amount to avoid needing multiple approvals
         const approvalAmount = game.buy_in_amount * 10
-        const approveHash = await approveUSDC(approvalAmount)
-        console.log('Approval transaction submitted:', approveHash)
+        console.log('Approval amount:', approvalAmount, 'USDC =', parseUSDC(approvalAmount).toString(), 'raw')
+
+        try {
+          const approveHash = await approveUSDC(approvalAmount)
+          console.log('Approval transaction submitted:', approveHash)
+        } catch (approveError) {
+          console.error('Approval failed:', approveError)
+          throw approveError
+        }
 
         // Wait for approval to be mined
         console.log('Waiting for approval confirmation...')
