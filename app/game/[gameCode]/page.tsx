@@ -565,6 +565,13 @@ export default function PlayerView() {
             </p>
           </div>
 
+          {/* Wallet recommendation */}
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+            <p className="text-xs text-blue-800">
+              💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best testnet experience.
+            </p>
+          </div>
+
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
               {error}
@@ -667,6 +674,19 @@ export default function PlayerView() {
                 <p className="text-xs text-gray-500 mb-2">
                   Your USDC balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
                 </p>
+              )}
+              {connector?.name.toLowerCase().includes('farcaster') && (
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-xs text-yellow-800">
+                    Having issues? Try using{' '}
+                    <button
+                      onClick={() => setShowWalletModal(true)}
+                      className="underline font-medium"
+                    >
+                      a different wallet
+                    </button>
+                  </p>
+                </div>
               )}
               <button
                 onClick={handleBuyIn}

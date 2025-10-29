@@ -9,7 +9,7 @@ const activeChain = USE_MAINNET ? base : baseSepolia
 
 // RPC URLs - Use custom RPC if provided, otherwise fallback to public
 const BASE_MAINNET_RPC = process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'
-const BASE_SEPOLIA_RPC = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'
+const BASE_SEPOLIA_RPC = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com'
 
 // WalletConnect Project ID (optional - falls back to public)
 const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'a01e2f3b4c5d6e7f8g9h0i1j2k3l4m5n'
