@@ -181,8 +181,24 @@ export default function PlayerView() {
     setError('')
 
     try {
-      // Privy will automatically create an embedded wallet if needed
-      // and prompt the user when the first transaction is attempted
+      // Step 0: Ensure wallet is connected
+      if (wallets.length === 0) {
+        console.log('No wallet connected, prompting login...')
+        await login()
+        // Wait for wallet to be available
+        let attempts = 0
+        while (wallets.length === 0 && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          attempts++
+        }
+        if (wallets.length === 0) {
+          setError('Please connect your wallet to continue')
+          return
+        }
+      }
+
+      console.log('Wallet connected:', wallets[0].address)
+
       // Step 1: Check USDC allowance
       await refetchAllowance()
       const requiredAmount = parseUSDC(game.buy_in_amount)
