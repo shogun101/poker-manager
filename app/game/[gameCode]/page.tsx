@@ -177,17 +177,12 @@ export default function PlayerView() {
   const handleBuyIn = async () => {
     if (!game || !context) return
 
-    // Check if wallet is connected
-    if (!authenticated || !walletAddress) {
-      setError('Please connect your wallet first')
-      login()
-      return
-    }
-
     setIsJoining(true)
     setError('')
 
     try {
+      // Privy will automatically create an embedded wallet if needed
+      // and prompt the user when the first transaction is attempted
       // Step 1: Check USDC allowance
       await refetchAllowance()
       const requiredAmount = parseUSDC(game.buy_in_amount)
