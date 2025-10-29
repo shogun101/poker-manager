@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
-import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useAccount, useConnect } from 'wagmi'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame } from '@/hooks/usePokerEscrow'
 import { parseUSDC } from '@/lib/contracts'
 
@@ -17,10 +17,9 @@ export default function PlayerView() {
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
 
-  // Privy wallet hooks
-  const { ready: privyReady, authenticated, login } = usePrivy()
-  const { wallets } = useWallets()
-  const [walletAddress, setWalletAddress] = useState<`0x${string}` | undefined>()
+  // Wagmi wallet hooks
+  const { address: walletAddress, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
 
   // Blockchain hooks
   const { createGame: createGameOnChain, isPending: isCreatingGame } = useCreateGame()
@@ -41,13 +40,6 @@ export default function PlayerView() {
   // Host-specific state
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
-
-  // Set wallet address from Privy
-  useEffect(() => {
-    if (wallets.length > 0) {
-      setWalletAddress(wallets[0].address as `0x${string}`)
-    }
-  }, [wallets])
 
   useEffect(() => {
     if (!gameCode || !isSDKLoaded || !context) return
@@ -182,22 +174,22 @@ export default function PlayerView() {
 
     try {
       // Step 0: Ensure wallet is connected
-      if (wallets.length === 0) {
-        console.log('No wallet connected, prompting login...')
-        await login()
-        // Wait for wallet to be available
+      if (!isConnected || !walletAddress) {
+        console.log('No wallet connected, connecting via Farcaster...')
+        connect({ connector: connectors[0] })
+        // Wait for wallet to be connected
         let attempts = 0
-        while (wallets.length === 0 && attempts < 20) {
+        while (!isConnected && attempts < 20) {
           await new Promise(resolve => setTimeout(resolve, 500))
           attempts++
         }
-        if (wallets.length === 0) {
+        if (!isConnected || !walletAddress) {
           setError('Please connect your wallet to continue')
           return
         }
       }
 
-      console.log('Wallet connected:', wallets[0].address)
+      console.log('Wallet connected:', walletAddress)
 
       // Step 1: Check USDC allowance
       await refetchAllowance()
@@ -245,10 +237,7 @@ export default function PlayerView() {
         }
       } else {
         // New player - joining game
-        // Get the current wallet address (it should be available after transaction)
-        const currentWalletAddress = wallets.length > 0 ? wallets[0].address : walletAddress
-
-        if (!currentWalletAddress) {
+        if (!walletAddress) {
           setError('Wallet address not found. Please try again.')
           return
         }
@@ -258,7 +247,7 @@ export default function PlayerView() {
           .insert({
             game_id: game.id,
             fid: context.user.fid,
-            wallet_address: currentWalletAddress,
+            wallet_address: walletAddress,
             total_buy_ins: 1,
             total_deposited: game.buy_in_amount,
           })
@@ -273,7 +262,6 @@ export default function PlayerView() {
 
         console.log('Successfully joined game:', newPlayer)
         setPlayer(newPlayer)
-        setWalletAddress(currentWalletAddress as `0x${string}`)
       }
     } catch (err) {
       console.error('Error with buy-in:', err)

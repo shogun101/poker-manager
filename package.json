@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@farcaster/frame-sdk": "^0.0.64",
+    "@farcaster/frame-wagmi-connector": "^0.0.53",
     "@privy-io/react-auth": "^3.4.1",
     "@privy-io/wagmi": "^2.0.2",
     "@supabase/supabase-js": "^2.76.1",

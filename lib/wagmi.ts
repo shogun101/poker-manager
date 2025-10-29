@@ -1,6 +1,6 @@
-import { http } from 'wagmi'
+import { http, createConfig } from 'wagmi'
 import { baseSepolia, base } from 'wagmi/chains'
-import { createConfig } from '@privy-io/wagmi'
+import { farcasterFrame } from '@farcaster/frame-wagmi-connector'
 
 export const wagmiConfig = createConfig({
   chains: [baseSepolia, base],
@@ -8,4 +8,5 @@ export const wagmiConfig = createConfig({
     [baseSepolia.id]: http(),
     [base.id]: http(),
   },
+  connectors: [farcasterFrame()],
 })
