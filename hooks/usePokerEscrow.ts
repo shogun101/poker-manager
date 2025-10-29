@@ -109,8 +109,7 @@ export function useUSDCBalance(userAddress: `0x${string}` | undefined) {
 }
 
 export function useDistributePayout() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { writeContractAsync } = useWriteContract()
 
   const distributePayout = async (
     gameId: string,
@@ -122,20 +121,19 @@ export function useDistributePayout() {
     const usdcBigInts = usdcAmounts.map(amt => parseUSDC(amt))
     const ethBigInts = ethAmounts.map(amt => BigInt(0)) // We're not using ETH for now
 
-    writeContract({
+    // Returns the transaction hash after user confirms
+    const hash = await writeContractAsync({
       address: POKER_ESCROW_ADDRESS,
       abi: POKER_ESCROW_ABI,
       functionName: 'distributePayout',
       args: [gameIdBytes, players as `0x${string}`[], usdcBigInts, ethBigInts],
     })
+
+    return hash
   }
 
   return {
     distributePayout,
-    hash,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    error,
   }
 }
 

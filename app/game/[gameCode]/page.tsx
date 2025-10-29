@@ -9,8 +9,10 @@ import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
 import { useAccount, useConnect } from 'wagmi'
+import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame } from '@/hooks/usePokerEscrow'
 import { parseUSDC } from '@/lib/contracts'
+import { wagmiConfig } from '@/lib/wagmi'
 
 export default function PlayerView() {
   const { gameCode } = useParams()
@@ -26,7 +28,7 @@ export default function PlayerView() {
   const { depositUSDC, isPending: isDepositingUSDC, isSuccess: depositSuccess } = useDepositUSDC()
   const { approveUSDC, isPending: isApprovingUSDC, isSuccess: approveSuccess } = useApproveUSDC()
   const { allowance, refetch: refetchAllowance } = useUSDCAllowance(walletAddress)
-  const { distributePayout, isPending: isDistributing } = useDistributePayout()
+  const { distributePayout } = useDistributePayout()
 
   const [game, setGame] = useState<Game | null>(null)
   const [player, setPlayer] = useState<Player | null>(null)
@@ -338,43 +340,19 @@ export default function PlayerView() {
       console.log('Player addresses:', playerAddresses)
       console.log('USDC amounts:', usdcAmounts)
 
-      // Initiate the transaction
-      distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
+      // Call distributePayout and wait for transaction hash
+      console.log('Waiting for user to confirm transaction...')
+      const txHash = await distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
 
-      // Wait for the user to confirm and for the transaction to be mined
-      console.log('Waiting for distribution transaction to be confirmed...')
+      console.log('Transaction submitted! Hash:', txHash)
+      console.log('Waiting for blockchain confirmation...')
 
-      // Wait up to 2 minutes for the transaction
-      let attempts = 0
-      const maxAttempts = 120 // 2 minutes with 1 second intervals
+      // Wait for transaction to be mined
+      const receipt = await waitForTransactionReceipt(wagmiConfig, {
+        hash: txHash,
+      })
 
-      // First wait for transaction to be pending
-      while (!isDistributing && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        attempts++
-        if (attempts > 10 && !isDistributing) {
-          // User might have rejected the transaction
-          console.log('Transaction not initiated after 10 seconds')
-          setError('Transaction was not initiated. Please try again.')
-          return
-        }
-      }
-
-      console.log('Transaction initiated, waiting for confirmation...')
-
-      // Then wait for it to complete
-      attempts = 0
-      while (isDistributing && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        attempts++
-      }
-
-      if (attempts >= maxAttempts) {
-        setError('Transaction timed out. Please check your wallet and try again.')
-        return
-      }
-
-      console.log('Distribution transaction confirmed!')
+      console.log('Transaction confirmed!', receipt)
 
       // Step 2: Update database
       console.log('Updating database with final settlement...')
