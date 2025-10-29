@@ -11,7 +11,7 @@ import ShareLink from '@/components/ShareLink'
 import { useAccount, useConnect } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useDepositUSDC, useApproveUSDC, useUSDCAllowance, useDistributePayout, useCreateGame, useUSDCBalance } from '@/hooks/usePokerEscrow'
-import { parseUSDC } from '@/lib/contracts'
+import { parseUSDC, USDC_ADDRESS } from '@/lib/contracts'
 import { wagmiConfig } from '@/lib/wagmi'
 
 export default function PlayerView() {
@@ -205,10 +205,19 @@ export default function PlayerView() {
       
       const requiredAmount = parseUSDC(game.buy_in_amount)
       
+      // Debug logging
+      console.log('=== BALANCE CHECK DEBUG ===')
+      console.log('Wallet Address:', walletAddress)
+      console.log('Raw USDC Balance:', usdcBalance?.toString())
+      console.log('Required Amount (raw):', requiredAmount.toString())
+      console.log('Required Amount (USDC):', game.buy_in_amount)
+      console.log('Current Balance (USDC):', usdcBalance ? Number(usdcBalance) / 1e6 : 'undefined')
+      console.log('Balance Check:', usdcBalance !== undefined && usdcBalance < requiredAmount ? 'INSUFFICIENT' : 'OK')
+      console.log('========================')
+      
       // Only check balance if we successfully fetched it
       if (usdcBalance !== undefined && usdcBalance < requiredAmount) {
         const currentBalance = Number(usdcBalance) / 1e6
-        const mintGuideUrl = 'https://github.com/yourusername/poker-manager/blob/main/HOW_TO_MINT_USDC.md'
         setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${currentBalance.toFixed(2)} USDC. You need to get testnet USDC first.`)
         throw new Error(`Insufficient USDC balance: need ${game.buy_in_amount}, have ${currentBalance.toFixed(2)}`)
       }
@@ -527,6 +536,9 @@ export default function PlayerView() {
                 Your balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
               </p>
             )}
+            <p className="text-xs text-gray-400 mt-2 font-mono">
+              USDC: {USDC_ADDRESS}
+            </p>
           </div>
 
           {error && (
