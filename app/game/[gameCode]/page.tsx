@@ -36,6 +36,7 @@ export default function PlayerView() {
   const [farcasterUsers, setFarcasterUsers] = useState<Map<number, FarcasterUser>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
+  const [buyInStatus, setBuyInStatus] = useState<'idle' | 'approving' | 'depositing'>('idle')
   const [error, setError] = useState('')
   const fetchedFidsRef = useRef<Set<number>>(new Set())
 
@@ -172,6 +173,7 @@ export default function PlayerView() {
     if (!game || !context) return
 
     setIsJoining(true)
+    setBuyInStatus('idle')
     setError('')
 
     try {
@@ -199,25 +201,32 @@ export default function PlayerView() {
 
       // Step 2: Approve USDC if needed
       if (!allowance || allowance < requiredAmount) {
-        console.log('Approving USDC spend...')
+        console.log('Requesting USDC approval...')
+        setBuyInStatus('approving')
+
         const approveHash = await approveUSDC(game.buy_in_amount)
         console.log('Approval transaction submitted:', approveHash)
 
         // Wait for approval to be mined
+        console.log('Waiting for approval confirmation...')
         await waitForTransactionReceipt(wagmiConfig, { hash: approveHash })
         console.log('USDC approval confirmed!')
       }
 
       // Step 3: Deposit USDC to escrow contract
-      console.log('Depositing USDC to escrow...')
+      console.log('Requesting USDC deposit...')
+      setBuyInStatus('depositing')
+
       const depositHash = await depositUSDC(game.id, game.buy_in_amount)
       console.log('Deposit transaction submitted:', depositHash)
 
       // Wait for deposit to be mined
+      console.log('Waiting for deposit confirmation...')
       await waitForTransactionReceipt(wagmiConfig, { hash: depositHash })
       console.log('USDC deposit confirmed!')
 
-      // Step 4: Update database
+      // Step 4: Update database ONLY after blockchain confirmation
+      console.log('Updating database...')
       if (player) {
         // Existing player - additional buy-in
         const { error } = await supabase
@@ -234,9 +243,10 @@ export default function PlayerView() {
             total_buy_ins: player.total_buy_ins + 1,
             total_deposited: player.total_deposited + game.buy_in_amount,
           })
+          console.log('Buy-in recorded successfully!')
         } else {
           console.error('Error updating buy-in:', error)
-          setError('Failed to record buy-in')
+          setError('Blockchain transaction succeeded but failed to record in database. Contact support.')
         }
       } else {
         // New player - joining game
@@ -259,7 +269,7 @@ export default function PlayerView() {
 
         if (joinError) {
           console.error('Join error:', joinError)
-          setError('Failed to record join in database')
+          setError('Blockchain transaction succeeded but failed to record join. Contact support.')
           return
         }
 
@@ -268,9 +278,22 @@ export default function PlayerView() {
       }
     } catch (err) {
       console.error('Error with buy-in:', err)
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+
+      // Better error messages based on what failed
+      if (err instanceof Error) {
+        if (err.message.includes('User rejected') || err.message.includes('user rejected')) {
+          setError('Transaction cancelled - you did not approve in your wallet')
+        } else if (err.message.includes('insufficient funds')) {
+          setError('Insufficient USDC balance for buy-in')
+        } else {
+          setError(`Transaction failed: ${err.message}`)
+        }
+      } else {
+        setError('Transaction failed. Please try again.')
+      }
     } finally {
       setIsJoining(false)
+      setBuyInStatus('idle')
     }
   }
 
@@ -548,8 +571,12 @@ export default function PlayerView() {
               disabled={isJoining}
               className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
-              {isJoining
-                ? 'Processing transaction...'
+              {buyInStatus === 'approving'
+                ? 'Confirm approval in wallet...'
+                : buyInStatus === 'depositing'
+                ? 'Confirm deposit in wallet...'
+                : isJoining
+                ? 'Processing...'
                 : `${player.total_buy_ins === 0 ? 'Buy In' : 'Buy In Again'} (${formatCurrency(game.buy_in_amount, game.currency)})`
               }
             </button>
