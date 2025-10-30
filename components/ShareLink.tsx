@@ -52,30 +52,6 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     }
   }
 
-  const canShare = typeof navigator !== 'undefined' && typeof navigator.share !== 'undefined'
-
-  const handleShare = async () => {
-    // Try native share API first (works great in Farcaster mobile)
-    if (canShare) {
-      try {
-        await navigator.share({
-          title: 'Join my poker game!',
-          text: `Join poker game ${gameCode}`,
-          url: shareUrl,
-        })
-      } catch (err) {
-        // User cancelled or error - fall back to copy
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err)
-          handleCopy()
-        }
-      }
-    } else {
-      // Fallback to copy
-      handleCopy()
-    }
-  }
-
   return (
     <div className="border border-black/24 border-dashed rounded-xl p-4 bg-[#F5F5F5]">
       <div className="flex flex-col items-center gap-2">
@@ -91,28 +67,15 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
             {shareUrl}
           </p>
 
-          {/* Share/Copy Buttons */}
-          <div className="flex gap-1 shrink-0">
-            {canShare && (
-              <button
-                onClick={handleShare}
-                className="bg-purple-600 rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors"
-                title="Share in Farcaster"
-              >
-                <span className="text-white text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-                  Share
-                </span>
-              </button>
-            )}
-            <button
-              onClick={handleCopy}
-              className="bg-black rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors"
-            >
-              <span className="text-white/88 text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-                {copied ? 'Copied!' : 'Copy'}
-              </span>
-            </button>
-          </div>
+          {/* Copy Button */}
+          <button
+            onClick={handleCopy}
+            className="bg-black rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors"
+          >
+            <span className="text-white/88 text-[13px] font-normal tracking-[-0.39px] leading-[90%] uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {copied ? 'Copied!' : 'Copy'}
+            </span>
+          </button>
         </div>
 
         {/* Helper text for Farcaster users */}
