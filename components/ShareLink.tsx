@@ -52,9 +52,11 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     }
   }
 
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share !== 'undefined'
+
   const handleShare = async () => {
     // Try native share API first (works great in Farcaster mobile)
-    if (navigator.share) {
+    if (canShare) {
       try {
         await navigator.share({
           title: 'Join my poker game!',
@@ -91,7 +93,7 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
 
           {/* Share/Copy Buttons */}
           <div className="flex gap-1 shrink-0">
-            {navigator.share && (
+            {canShare && (
               <button
                 onClick={handleShare}
                 className="bg-purple-600 rounded-lg px-1.5 py-2 flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors"
