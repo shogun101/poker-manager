@@ -231,7 +231,7 @@ export default function PlayerView() {
       // Only check balance if we successfully fetched it
       if (usdcBalance !== undefined && usdcBalance < requiredAmount) {
         const currentBalance = Number(usdcBalance) / 1e6
-        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${currentBalance.toFixed(2)} USDC. You need to get testnet USDC first.`)
+        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${currentBalance.toFixed(2)} USDC.`)
         throw new Error(`Insufficient USDC balance: need ${game.buy_in_amount}, have ${currentBalance.toFixed(2)}`)
       }
 
@@ -662,7 +662,7 @@ export default function PlayerView() {
           {/* Wallet recommendation */}
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
             <p className="text-xs text-blue-800">
-              💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best testnet experience.
+              💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best experience.
             </p>
           </div>
 
