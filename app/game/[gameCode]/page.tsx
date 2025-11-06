@@ -261,11 +261,17 @@ export default function PlayerView() {
 
         const approveHash = await approveUSDC(approvalAmount)
         console.log('Approval transaction submitted:', approveHash)
+        console.log('Approval hash type:', typeof approveHash, 'length:', approveHash?.length)
+
+        // Validate hash before waiting
+        if (!approveHash || typeof approveHash !== 'string' || !approveHash.startsWith('0x') || approveHash.length !== 66) {
+          throw new Error(`Invalid approval transaction hash: ${approveHash}`)
+        }
 
         // Wait for approval to be mined
         console.log('Waiting for approval confirmation...')
         setBuyInStatus('confirming')
-        await waitForTransactionReceipt(wagmiConfig, { hash: approveHash })
+        await waitForTransactionReceipt(wagmiConfig, { hash: approveHash as `0x${string}` })
         console.log('USDC approval confirmed!')
         
         // Refetch allowance to ensure it's updated
@@ -280,11 +286,17 @@ export default function PlayerView() {
 
       const depositHash = await depositUSDC(game.id, game.buy_in_amount)
       console.log('Deposit transaction submitted:', depositHash)
+      console.log('Deposit hash type:', typeof depositHash, 'length:', depositHash?.length)
+
+      // Validate hash before waiting
+      if (!depositHash || typeof depositHash !== 'string' || !depositHash.startsWith('0x') || depositHash.length !== 66) {
+        throw new Error(`Invalid deposit transaction hash: ${depositHash}`)
+      }
 
       // Wait for deposit to be mined
       console.log('Waiting for deposit confirmation...')
       setBuyInStatus('confirming')
-      await waitForTransactionReceipt(wagmiConfig, { hash: depositHash })
+      await waitForTransactionReceipt(wagmiConfig, { hash: depositHash as `0x${string}` })
       console.log('USDC deposit confirmed!')
 
       // Step 5: Update database ONLY after blockchain confirmation
@@ -477,11 +489,18 @@ export default function PlayerView() {
       const txHash = await distributePayout(game.id, playerAddresses, usdcAmounts, ethAmounts)
 
       console.log('Transaction submitted! Hash:', txHash)
+      console.log('Transaction hash type:', typeof txHash, 'length:', txHash?.length)
+
+      // Validate hash before waiting
+      if (!txHash || typeof txHash !== 'string' || !txHash.startsWith('0x') || txHash.length !== 66) {
+        throw new Error(`Invalid settlement transaction hash: ${txHash}`)
+      }
+
       console.log('Waiting for blockchain confirmation...')
 
       // Wait for transaction to be mined
       const receipt = await waitForTransactionReceipt(wagmiConfig, {
-        hash: txHash,
+        hash: txHash as `0x${string}`,
       })
 
       console.log('Transaction confirmed!', receipt)
