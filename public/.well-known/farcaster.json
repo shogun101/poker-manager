@@ -9,8 +9,8 @@
     "name": "Poker Manager",
     "homeUrl": "https://poker-manager-murex.vercel.app",
     "iconUrl": "https://poker-manager-murex.vercel.app/icon-192.png",
-    "splashImageUrl": "https://poker-manager-murex.vercel.app/icon-512.png",
-    "splashBackgroundColor": "#581c87",
+    "splashImageUrl": "https://poker-manager-murex.vercel.app/splash.png",
+    "splashBackgroundColor": "#ffffff",
     "webhookUrl": "https://poker-manager-murex.vercel.app/api/webhook"
   }
 }
