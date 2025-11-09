@@ -120,15 +120,15 @@ export default function CreateGame() {
 
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-black mb-1">Create Game</h1>
-          <p className="text-sm text-gray-600">Set buy-in amount and currency</p>
+          <p className="text-sm text-gray-600">Set buy-in amount in USDC</p>
         </div>
 
         {/* Form */}
         <div className="space-y-6">
-          {/* Buy-in Amount */}
+          {/* Buy-in Amount in USDC */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
-              Buy-in Amount
+              Buy-in Amount (USDC)
             </label>
             <input
               type="number"
@@ -141,33 +141,11 @@ export default function CreateGame() {
             />
           </div>
 
-          {/* Currency Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Currency
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrency('USDC')}
-                className={`flex-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
-                  currency === 'USDC'
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                USDC
-              </button>
-              <button
-                onClick={() => setCurrency('ETH')}
-                className={`flex-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
-                  currency === 'ETH'
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                ETH
-              </button>
-            </div>
+          {/* USDC-only Info Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p className="text-xs text-blue-800">
+              💰 All buy-ins and payouts are processed in USDC on Base
+            </p>
           </div>
 
           {/* Wallet Connection Section */}
