@@ -165,7 +165,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="px-4 py-2 border-2 border-black rounded-lg bg-white">
+            <div className="px-3 py-1.5 border-2 border-black rounded-lg bg-white">
               <span className="text-xs font-[family-name:var(--font-margarine)]">🟣 Connected</span>
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function Home() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="eg: Rob's house"
-              className="w-full px-4 py-3 border-2 border-black rounded-xl text-base placeholder:text-gray-400"
+              className="w-full px-4 py-3 border-2 border-black rounded-xl text-base placeholder:text-gray-400 bg-white font-[family-name:var(--font-margarine)]"
             />
           </div>
 
@@ -193,7 +193,7 @@ export default function Home() {
                 BAL: {balance} USDC
               </span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl">
+            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl bg-white">
               <span className="text-lg font-[family-name:var(--font-margarine)]">$</span>
               <input
                 type="number"
@@ -202,24 +202,24 @@ export default function Home() {
                 placeholder="10.00"
                 step="0.01"
                 min="0"
-                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none"
+                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none bg-white"
               />
-              <div className="flex gap-1">
+              <div className="flex gap-1 shrink-0">
                 <button
                   onClick={() => handlePresetAmount(50)}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   $50
                 </button>
                 <button
                   onClick={() => handlePresetAmount(100)}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   $100
                 </button>
                 <button
                   onClick={() => handlePresetAmount('max')}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   MAX
                 </button>
@@ -247,31 +247,31 @@ export default function Home() {
             <label className="block text-black font-[family-name:var(--font-margarine)] text-base mb-2">
               Join a Game
             </label>
-            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl">
+            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl bg-white">
               <input
                 type="text"
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 placeholder="Enter game code"
                 maxLength={6}
-                className="flex-1 text-base font-[family-name:var(--font-margarine)] outline-none uppercase placeholder:text-gray-400"
+                className="flex-1 text-base font-[family-name:var(--font-margarine)] outline-none uppercase placeholder:text-gray-400 bg-white"
               />
-              <div className="flex gap-1">
+              <div className="flex gap-1 shrink-0">
                 <button
                   onClick={() => handlePresetAmount(50)}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   $50
                 </button>
                 <button
                   onClick={() => handlePresetAmount(100)}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   $100
                 </button>
                 <button
                   onClick={() => handlePresetAmount('max')}
-                  className="px-3 py-1 border-2 border-black rounded-lg text-sm font-[family-name:var(--font-margarine)] hover:bg-gray-100"
+                  className="px-2.5 py-1 border-2 border-black rounded-lg text-xs font-[family-name:var(--font-margarine)] hover:bg-gray-100 bg-white"
                 >
                   MAX
                 </button>

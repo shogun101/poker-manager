@@ -133,7 +133,7 @@ export default function CreateGame() {
             <label className="block text-base font-[family-name:var(--font-margarine)] text-black mb-2">
               Buy-in Amount (USDC)
             </label>
-            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl">
+            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl bg-white">
               <span className="text-lg font-[family-name:var(--font-margarine)]">$</span>
               <input
                 type="number"
@@ -142,7 +142,7 @@ export default function CreateGame() {
                 value={buyInAmount}
                 onChange={(e) => setBuyInAmount(e.target.value)}
                 placeholder="10.00"
-                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none"
+                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none bg-white"
               />
             </div>
           </div>
