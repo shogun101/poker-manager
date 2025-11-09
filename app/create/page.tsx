@@ -109,41 +109,47 @@ export default function CreateGame() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
-        <button
-          onClick={() => router.push('/')}
-          className="text-sm text-gray-600 hover:text-black mb-6 cursor-pointer"
-        >
-          ← Back
-        </button>
-
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-black mb-1">Create Game</h1>
-          <p className="text-sm text-gray-600">Set buy-in amount in USDC</p>
+      {/* Purple Header */}
+      <div className="bg-primary text-white px-4 py-4 shadow-[0_2px_0_0_rgba(0,0,0,1)]">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => router.push('/')}
+            className="text-white hover:text-white/80 font-[family-name:var(--font-margarine)] text-base"
+          >
+            ← Back
+          </button>
+          <h1 className="text-2xl font-[family-name:var(--font-lilita)] tracking-tight" style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}>
+            Create Game
+          </h1>
+          <div className="w-16"></div> {/* Spacer for centering */}
         </div>
+      </div>
 
-        {/* Form */}
-        <div className="space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6">
+
+        <div className="border-4 border-black rounded-2xl p-6 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
           {/* Buy-in Amount in USDC */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+          <div className="mb-4">
+            <label className="block text-base font-[family-name:var(--font-margarine)] text-black mb-2">
               Buy-in Amount (USDC)
             </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={buyInAmount}
-              onChange={(e) => setBuyInAmount(e.target.value)}
-              placeholder="0.00"
-              className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400"
-            />
+            <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl">
+              <span className="text-lg font-[family-name:var(--font-margarine)]">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={buyInAmount}
+                onChange={(e) => setBuyInAmount(e.target.value)}
+                placeholder="10.00"
+                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none"
+              />
+            </div>
           </div>
 
           {/* USDC-only Info Banner */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <p className="text-xs text-blue-800">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-6">
+            <p className="text-sm text-blue-800 font-[family-name:var(--font-margarine)]">
               💰 All buy-ins and payouts are processed in USDC on Base
             </p>
           </div>
@@ -152,9 +158,9 @@ export default function CreateGame() {
           {!isConnected ? (
             <div>
               <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Connect Wallet to Continue</h3>
-                <p className="text-xs text-gray-600 mb-4">
-                  Choose how you want to connect your wallet to create the game
+                <h3 className="text-base font-[family-name:var(--font-lilita)] text-black mb-2">Connect Wallet to Continue</h3>
+                <p className="text-sm text-gray-600 mb-4 font-[family-name:var(--font-margarine)]">
+                  Choose how you want to connect your wallet
                 </p>
               </div>
 
@@ -163,12 +169,12 @@ export default function CreateGame() {
                 {connectors.find(c => c.name.toLowerCase().includes('farcaster')) && (
                   <button
                     onClick={() => connect({ connector: connectors.find(c => c.name.toLowerCase().includes('farcaster'))! })}
-                    className="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all text-left"
+                    className="w-full flex items-center gap-3 p-4 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
                   >
                     <span className="text-2xl">🟣</span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-black">Connect Farcaster Wallet</p>
-                      <p className="text-xs text-gray-500">Use your Farcaster Frame wallet</p>
+                      <p className="text-base font-[family-name:var(--font-margarine)] text-black">Connect Farcaster Wallet</p>
+                      <p className="text-sm text-gray-500 font-[family-name:var(--font-margarine)]">Use your Farcaster Frame wallet</p>
                     </div>
                   </button>
                 )}
@@ -176,12 +182,12 @@ export default function CreateGame() {
                 {/* External Wallet Button */}
                 <button
                   onClick={() => setShowWalletModal(true)}
-                  className="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all text-left"
+                  className="w-full flex items-center gap-3 p-4 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
                 >
                   <span className="text-2xl">💼</span>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-black">Use External Wallet</p>
-                    <p className="text-xs text-gray-500">MetaMask, Coinbase, WalletConnect, etc.</p>
+                    <p className="text-base font-[family-name:var(--font-margarine)] text-black">Use External Wallet</p>
+                    <p className="text-sm text-gray-500 font-[family-name:var(--font-margarine)]">MetaMask, Coinbase, WalletConnect, etc.</p>
                   </div>
                 </button>
               </div>
@@ -189,15 +195,15 @@ export default function CreateGame() {
           ) : (
             <div>
               {/* Wallet Connected Status */}
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-xs text-green-800">
+              <div className="mb-4 p-3 bg-green-50 border-2 border-green-200 rounded-xl">
+                <p className="text-sm text-green-800 font-[family-name:var(--font-margarine)]">
                   ✅ Wallet connected: {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
                 </p>
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
+                <div className="text-sm text-red-600 bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 mb-4 font-[family-name:var(--font-margarine)]">
                   {error}
                 </div>
               )}
@@ -206,9 +212,10 @@ export default function CreateGame() {
               <button
                 onClick={handleCreateGame}
                 disabled={isCreating || isCreatingOnChain || !buyInAmount}
-                className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="w-full py-4 bg-primary text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
+                style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}
               >
-                {isCreatingOnChain ? 'Creating on blockchain...' : isCreating ? 'Creating...' : 'Create Game'}
+                {isCreatingOnChain ? 'Creating on Blockchain...' : isCreating ? 'Creating...' : 'Create Game'}
               </button>
             </div>
           )}

@@ -37,7 +37,17 @@
       "Bash(forge test:*)",
       "Bash(forge script:*)",
       "Bash(printf:*)",
-      "Bash(forge create:*)"
+      "Bash(forge create:*)",
+      "Bash(source .env)",
+      "Bash(cast balance:*)",
+      "Bash(source:*)",
+      "Bash(unset:*)",
+      "Bash(if [ -f .env.local ])",
+      "Bash(then grep -i \"NEYNAR\" .env.local)",
+      "Bash(else echo \"No .env.local file found\")",
+      "Bash(fi)",
+      "Bash(then grep -i \"FIGMA\" .env.local)",
+      "Bash(else echo \"No FIGMA token in .env.local\")"
     ],
     "deny": [],
     "ask": []

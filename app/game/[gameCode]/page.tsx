@@ -603,126 +603,132 @@ export default function PlayerView() {
   if (!player) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <button
-            onClick={() => router.push('/')}
-            className="text-sm text-gray-600 hover:text-black mb-6 cursor-pointer"
-          >
-            ← Back
-          </button>
-
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-black mb-1">{game.game_code}</h1>
-            <p className="text-sm text-gray-600">Join this game</p>
+        {/* Purple Header */}
+        <div className="bg-primary text-white px-4 py-4 shadow-[0_2px_0_0_rgba(0,0,0,1)]">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => router.push('/')}
+              className="text-white hover:text-white/80 font-[family-name:var(--font-margarine)] text-base"
+            >
+              ← Back
+            </button>
+            <h1 className="text-2xl font-[family-name:var(--font-lilita)] tracking-tight" style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}>
+              {game.game_code}
+            </h1>
+            <div className="w-16"></div> {/* Spacer for centering */}
           </div>
+        </div>
 
-          <div className="space-y-4 mb-6">
-            <div className="border border-gray-200 rounded-md p-3">
-              <p className="text-xs text-gray-600 mb-1">Buy-in</p>
-              <p className="text-sm font-medium text-black">
-                {formatCurrency(game.buy_in_amount, game.currency)}
-              </p>
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="border-4 border-black rounded-2xl p-6 mb-6 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+            <h2 className="text-xl font-[family-name:var(--font-lilita)] text-black mb-4">Join the Game</h2>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="border-2 border-black rounded-xl p-3 bg-white">
+                <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Buy-in</p>
+                <p className="text-lg font-[family-name:var(--font-lilita)] text-black">
+                  ${game.buy_in_amount}
+                </p>
+              </div>
+              <div className="border-2 border-black rounded-xl p-3 bg-white">
+                <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Players</p>
+                <p className="text-lg font-[family-name:var(--font-lilita)] text-black">{allPlayers.length}</p>
+              </div>
             </div>
-            <div className="border border-gray-200 rounded-md p-3">
-              <p className="text-xs text-gray-600 mb-1">Players</p>
-              <p className="text-sm font-medium text-black">{allPlayers.length}</p>
-            </div>
-          </div>
 
-          {/* Supporting text for buy-in */}
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
-            <p className="text-xs text-gray-600">
-              By joining, {formatCurrency(game.buy_in_amount, game.currency)} will be deposited from your wallet to the game escrow.
-            </p>
-            {isConnected && usdcBalance !== undefined && (
-              <p className="text-xs text-gray-500 mt-2">
-                Your balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+            {/* Supporting text for buy-in */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
+              <p className="text-sm text-blue-800 font-[family-name:var(--font-margarine)]">
+                💰 By joining, ${game.buy_in_amount} will be deposited from your wallet to the game escrow.
               </p>
-            )}
-            <p className="text-xs text-gray-400 mt-2 font-mono">
-              USDC: {USDC_ADDRESS}
-            </p>
-          </div>
-
-          {/* Network warning */}
-          {isConnected && chain && chain.id !== activeChain.id && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-              <p className="text-xs text-red-800 mb-2">
-                ⚠️ <strong>Wrong Network!</strong> You're on {chain.name} but need to be on {activeChain.name}.
-              </p>
-              <button
-                onClick={() => switchChain?.({ chainId: activeChain.id })}
-                className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
-                Switch to {activeChain.name}
-              </button>
+              {isConnected && usdcBalance !== undefined && (
+                <p className="text-sm text-blue-700 mt-2 font-[family-name:var(--font-margarine)]">
+                  Your balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+                </p>
+              )}
             </div>
-          )}
 
-          {/* Wallet recommendation */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-            <p className="text-xs text-blue-800">
-              💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best experience.
-            </p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <p className="text-sm text-red-800 font-medium mb-1">Error</p>
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+            {/* Network warning */}
+            {isConnected && chain && chain.id !== activeChain.id && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 mb-4">
+                <p className="text-sm text-red-800 mb-2 font-[family-name:var(--font-margarine)]">
+                  ⚠️ <strong>Wrong Network!</strong> You're on {chain.name} but need to be on {activeChain.name}.
+                </p>
                 <button
-                  onClick={() => setError('')}
-                  className="text-red-400 hover:text-red-600 text-lg leading-none"
-                  aria-label="Dismiss error"
+                  onClick={() => switchChain?.({ chainId: activeChain.id })}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg border-2 border-black shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:shadow-[1px_1px_0_0_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all font-[family-name:var(--font-lilita)] text-sm"
                 >
-                  ×
+                  Switch to {activeChain.name}
                 </button>
               </div>
-              <button
-                onClick={() => {
-                  setError('')
-                  handleJoinGame()
-                }}
-                disabled={isJoining}
-                className="mt-3 w-full px-3 py-2 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
+            )}
 
-          <button
-            onClick={handleJoinGame}
-            disabled={isJoining || game.status === 'ended'}
-            className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            {buyInStatus === 'approving'
-              ? 'Approve USDC Spending in Wallet...'
-              : buyInStatus === 'depositing'
-              ? `Confirm ${formatCurrency(game.buy_in_amount, game.currency)} Deposit in Wallet...`
-              : buyInStatus === 'confirming'
-              ? 'Waiting for Blockchain Confirmation...'
-              : isJoining
-              ? 'Processing...'
-              : game.status === 'ended'
-              ? 'Game Ended'
-              : isConnected && allowance && allowance >= parseUSDC(game.buy_in_amount)
-              ? `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)} Now`
-              : isConnected
-              ? `Approve & Join for ${formatCurrency(game.buy_in_amount, game.currency)}`
-              : `Join Game for ${formatCurrency(game.buy_in_amount, game.currency)}`
-            }
-          </button>
-
-          {/* Show Connect Button if not connected */}
-          {!isConnected && (
-            <div className="mt-4">
-              <ConnectButton />
+            {/* Wallet recommendation */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
+              <p className="text-sm text-blue-800 font-[family-name:var(--font-margarine)]">
+                💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best experience.
+              </p>
             </div>
-          )}
+
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm text-red-800 font-[family-name:var(--font-lilita)] mb-1">Error</p>
+                    <p className="text-sm text-red-700 font-[family-name:var(--font-margarine)]">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError('')}
+                    className="text-red-400 hover:text-red-600 text-lg leading-none"
+                    aria-label="Dismiss error"
+                  >
+                    ×
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setError('')
+                    handleJoinGame()
+                  }}
+                  disabled={isJoining}
+                  className="mt-3 w-full px-4 py-2 bg-red-600 text-white rounded-lg border-2 border-black shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:shadow-[1px_1px_0_0_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all font-[family-name:var(--font-lilita)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={handleJoinGame}
+              disabled={isJoining || game.status === 'ended'}
+              className="w-full py-4 bg-black text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+              style={{ textShadow: '0 2px 0 rgba(0,0,0,0.5)' }}
+            >
+              {buyInStatus === 'approving'
+                ? 'Approve USDC Spending...'
+                : buyInStatus === 'depositing'
+                ? `Confirm $${game.buy_in_amount} Deposit...`
+                : buyInStatus === 'confirming'
+                ? 'Waiting for Confirmation...'
+                : isJoining
+                ? 'Processing...'
+                : game.status === 'ended'
+                ? 'Game Ended'
+                : isConnected && allowance && allowance >= parseUSDC(game.buy_in_amount)
+                ? `Join Game for $${game.buy_in_amount}`
+                : isConnected
+                ? `Approve & Join for $${game.buy_in_amount}`
+                : `Join Game for $${game.buy_in_amount}`
+              }
+            </button>
+
+            {/* Show Connect Button if not connected */}
+            {!isConnected && (
+              <div className="mt-4">
+                <ConnectButton />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -731,33 +737,43 @@ export default function PlayerView() {
   // Player is in the game
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <button
-          onClick={() => router.push('/')}
-          className="text-sm text-gray-600 hover:text-black mb-6 cursor-pointer"
-        >
-          ← Back
-        </button>
-
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-black mb-1">{game.game_code}</h1>
-          <p className="text-sm text-gray-600 capitalize">
-            {game.status}{isHost && ' • You\'re the host'}
-          </p>
+      {/* Purple Header */}
+      <div className="bg-primary text-white px-4 py-4 shadow-[0_2px_0_0_rgba(0,0,0,1)]">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => router.push('/')}
+            className="text-white hover:text-white/80 font-[family-name:var(--font-margarine)] text-base"
+          >
+            ← Back
+          </button>
+          <h1 className="text-2xl font-[family-name:var(--font-lilita)] tracking-tight" style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}>
+            {game.game_code}
+          </h1>
+          <div className="w-16"></div> {/* Spacer for centering */}
         </div>
+        {isHost && (
+          <div className="max-w-2xl mx-auto mt-2">
+            <p className="text-center text-sm font-[family-name:var(--font-margarine)] text-white/90">
+              👑 You're the host
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 py-6">
 
         {/* Game Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="border border-gray-200 rounded-md p-3">
-            <p className="text-xs text-gray-600 mb-1">Buy-in</p>
-            <p className="text-sm font-medium text-black">
-              {formatCurrency(game.buy_in_amount, game.currency)}
+          <div className="border-2 border-black rounded-xl p-3 bg-white">
+            <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Buy-in</p>
+            <p className="text-lg font-[family-name:var(--font-lilita)] text-black">
+              ${game.buy_in_amount}
             </p>
           </div>
-          <div className="border border-gray-200 rounded-md p-3">
-            <p className="text-xs text-gray-600 mb-1">Pot</p>
-            <p className="text-sm font-medium text-black">
-              {formatCurrency(totalPot, game.currency)}
+          <div className="border-2 border-black rounded-xl p-3 bg-white">
+            <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Total Pot</p>
+            <p className="text-lg font-[family-name:var(--font-lilita)] text-accent">
+              ${totalPot}
             </p>
           </div>
         </div>
@@ -768,17 +784,17 @@ export default function PlayerView() {
         </div>
 
         {/* Your Stats */}
-        <div className="mb-6">
-          <h2 className="text-sm font-medium text-gray-900 mb-3">Your Stats</h2>
+        <div className="mb-6 border-4 border-black rounded-2xl p-6 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+          <h2 className="text-lg font-[family-name:var(--font-lilita)] text-black mb-4">Your Stats</h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="border border-gray-200 rounded-md p-3">
-              <p className="text-xs text-gray-600 mb-1">Buy-ins</p>
-              <p className="text-sm font-medium text-black">{player.total_buy_ins}</p>
+            <div className="border-2 border-black rounded-xl p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Buy-ins</p>
+              <p className="text-lg font-[family-name:var(--font-lilita)] text-black">{player.total_buy_ins}</p>
             </div>
-            <div className="border border-gray-200 rounded-md p-3">
-              <p className="text-xs text-gray-600 mb-1">Deposited</p>
-              <p className="text-sm font-medium text-black">
-                {formatCurrency(player.total_deposited, game.currency)}
+            <div className="border-2 border-black rounded-xl p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Deposited</p>
+              <p className="text-lg font-[family-name:var(--font-lilita)] text-black">
+                ${player.total_deposited}
               </p>
             </div>
           </div>
@@ -787,26 +803,27 @@ export default function PlayerView() {
           {game.status !== 'ended' && (
             <>
               {usdcBalance !== undefined && (
-                <p className="text-xs text-gray-500 mb-2">
-                  Your USDC balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+                <p className="text-sm text-gray-500 mb-2 font-[family-name:var(--font-margarine)]">
+                  💰 Balance: {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
                 </p>
               )}
               <button
                 onClick={handleBuyIn}
                 disabled={isJoining}
-                className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="w-full py-3 bg-primary text-white text-base font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}
               >
                 {buyInStatus === 'approving'
-                  ? 'Approve USDC Spending in Wallet...'
+                  ? 'Approve USDC Spending...'
                   : buyInStatus === 'depositing'
-                  ? `Confirm ${formatCurrency(game.buy_in_amount, game.currency)} Deposit in Wallet...`
+                  ? `Confirm $${game.buy_in_amount} Deposit...`
                   : buyInStatus === 'confirming'
-                  ? 'Waiting for Blockchain Confirmation...'
+                  ? 'Waiting for Confirmation...'
                   : isJoining
                   ? 'Processing...'
                   : allowance && allowance >= parseUSDC(game.buy_in_amount)
-                  ? `Buy In Again for ${formatCurrency(game.buy_in_amount, game.currency)} Now`
-                  : `Approve & Buy In for ${formatCurrency(game.buy_in_amount, game.currency)}`
+                  ? `Buy In Again for $${game.buy_in_amount}`
+                  : `Approve & Buy In for $${game.buy_in_amount}`
                 }
               </button>
             </>
@@ -822,7 +839,8 @@ export default function PlayerView() {
                 <button
                   onClick={handleStartGame}
                   disabled={allPlayers.length === 0}
-                  className="w-full px-4 py-2.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="w-full py-4 bg-black text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                  style={{ textShadow: '0 2px 0 rgba(0,0,0,0.5)' }}
                 >
                   Start Game
                 </button>
@@ -982,35 +1000,37 @@ export default function PlayerView() {
 
         {/* Players List */}
         <div>
-          <h2 className="text-sm font-medium text-gray-900 mb-3">
+          <h2 className="text-gray-400 font-[family-name:var(--font-margarine)] text-sm mb-3 uppercase tracking-wide">
             Players ({allPlayers.length})
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {allPlayers.map((p) => {
               const fcUser = farcasterUsers.get(p.fid)
               return (
                 <div
                   key={p.id}
-                  className={`border rounded-md p-3 ${
-                    p.id === player.id ? 'border-black' : 'border-gray-200'
+                  className={`border-2 rounded-xl p-4 ${
+                    p.id === player.id ? 'border-primary bg-primary/5' : 'border-gray-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Image
-                      src={fcUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.fid}`}
-                      alt={fcUser?.username || `User ${p.fid}`}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                      unoptimized
-                    />
+                    <div className="w-10 h-10 rounded-full border-2 border-black overflow-hidden bg-primary">
+                      <Image
+                        src={fcUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.fid}`}
+                        alt={fcUser?.username || `User ${p.fid}`}
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
+                    </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-black">
+                      <p className="text-base font-[family-name:var(--font-margarine)] text-black">
                         {fcUser ? `@${fcUser.username}` : `User ${p.fid}`}
                         {p.id === player.id && ' (You)'}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {p.total_buy_ins} buy-ins • {formatCurrency(p.total_deposited, game.currency)}
+                      <p className="text-sm text-gray-500 font-[family-name:var(--font-margarine)]">
+                        {p.total_buy_ins} buy-ins • ${p.total_deposited}
                       </p>
                     </div>
                   </div>
