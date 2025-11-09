@@ -3,13 +3,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary-purple: #3F25FF;
+  --accent-yellow: #FFD933;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary-purple);
+  --color-accent: var(--accent-yellow);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-lilita: var(--font-lilita);
+  --font-margarine: var(--font-margarine);
 }
 
 @media (prefers-color-scheme: dark) {

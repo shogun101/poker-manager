@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Lilita_One, Margarine } from "next/font/google";
 import "./globals.css";
 import { FarcasterProvider } from "@/lib/farcaster-provider";
 import Providers from "@/components/Providers";
@@ -11,6 +11,18 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const lilitaOne = Lilita_One({
+  weight: "400",
+  variable: "--font-lilita",
+  subsets: ["latin"],
+});
+
+const margarine = Margarine({
+  weight: "400",
+  variable: "--font-margarine",
   subsets: ["latin"],
 });
 
@@ -54,7 +66,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lilitaOne.variable} ${margarine.variable} antialiased`}
       >
         <Providers>
           <FarcasterProvider>
