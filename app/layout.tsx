@@ -18,6 +18,28 @@ export const metadata: Metadata = {
   title: "Poker Manager",
   description: "Manage live poker games with automated wallet-based settlements",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Poker Manager",
+    description: "Manage live poker games with automated wallet-based settlements",
+    url: "https://poker-manager-murex.vercel.app",
+    siteName: "Poker Manager",
+    images: [
+      {
+        url: "https://poker-manager-murex.vercel.app/og-image.png",
+        width: 3600,
+        height: 1890,
+        alt: "Poker Manager - Manage live poker games",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Poker Manager",
+    description: "Manage live poker games with automated wallet-based settlements",
+    images: ["https://poker-manager-murex.vercel.app/og-image.png"],
+  },
   other: {
     "fc:frame": "vNext",
     "fc:frame:image": "https://poker-manager-murex.vercel.app/og-image.png",
