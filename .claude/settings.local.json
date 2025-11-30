@@ -47,7 +47,9 @@
       "Bash(else echo \"No .env.local file found\")",
       "Bash(fi)",
       "Bash(then grep -i \"FIGMA\" .env.local)",
-      "Bash(else echo \"No FIGMA token in .env.local\")"
+      "Bash(else echo \"No FIGMA token in .env.local\")",
+      "Bash(then echo \"=== .env.local exists ===\" grep -E \"NEXT_PUBLIC_SUPABASE\" .env.local)",
+      "Bash(bash -c:*)"
     ],
     "deny": [],
     "ask": []

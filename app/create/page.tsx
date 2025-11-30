@@ -45,6 +45,7 @@ function CreateGameContent() {
   }
 
   const handleCreateGame = async () => {
+    console.log('🎮 CREATE GAME CLICKED')
     // Validation
     if (!buyInAmount || parseFloat(buyInAmount) <= 0) {
       setError('Please enter a valid buy-in amount')
@@ -62,13 +63,22 @@ function CreateGameContent() {
       return
     }
 
+    console.log('✅ All validations passed')
     setIsCreating(true)
     setError('')
 
     try {
       const gameCode = generateGameCode()
+      console.log('🎲 Generated game code:', gameCode)
 
       // Step 1: Create game in database first (to get the ID)
+      console.log('📝 Creating game with:', {
+        host_fid: context.user.fid,
+        game_code: gameCode,
+        buy_in_amount: parseFloat(buyInAmount),
+        currency: currency,
+      })
+
       const { data: game, error: dbError } = await supabase
         .from('games')
         .insert({
@@ -81,19 +91,34 @@ function CreateGameContent() {
         .select()
         .single()
 
+      console.log('📊 Database response:', { game, dbError })
+
       if (dbError) {
+        console.error('❌ Database error:', dbError)
         setError('Failed to create game. Please try again.')
         setIsCreating(false)
         return
       }
 
+      if (!game) {
+        console.error('❌ No game data returned')
+        setError('Failed to create game. No data returned.')
+        setIsCreating(false)
+        return
+      }
+
+      console.log('✅ Game created in DB:', game)
+
       // Step 2: Create game on blockchain using the database ID
+      console.log('⛓️ Creating game on blockchain with ID:', game.id)
       createGameOnChain(game.id)
 
       // Don't wait for blockchain - redirect immediately
       // The blockchain transaction will complete in the background
+      console.log('🚀 Redirecting to:', `/game/${game.game_code}`)
       router.push(`/game/${game.game_code}`)
     } catch (err) {
+      console.error('❌ Caught error:', err)
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setIsCreating(false)
     }
