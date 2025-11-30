@@ -1,12 +1,21 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from 'wagmi'
-import { POKER_ESCROW_ABI, POKER_ESCROW_ADDRESS, USDC_ABI, USDC_ADDRESS, parseUSDC, uuidToBytes32 } from '@/lib/contracts'
+import { POKER_ESCROW_ABI, POKER_ESCROW_ADDRESS, USDC_ABI, USDC_ADDRESS, parseUSDC, uuidToBytes32, ZERO_ADDRESS } from '@/lib/contracts'
 import { useState } from 'react'
+
+const CONTRACT_CONFIG_ERROR = 'Poker Escrow contract address is not configured. Please set NEXT_PUBLIC_POKER_ESCROW_ADDRESS.'
+
+const assertEscrowConfigured = () => {
+  if (POKER_ESCROW_ADDRESS === ZERO_ADDRESS) {
+    throw new Error(CONTRACT_CONFIG_ERROR)
+  }
+}
 
 export function useCreateGame() {
   const { writeContract, data: hash, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
   const createGame = async (gameId: string) => {
+    assertEscrowConfigured()
     const gameIdBytes = uuidToBytes32(gameId)
     writeContract({
       address: POKER_ESCROW_ADDRESS,
@@ -30,6 +39,7 @@ export function useDepositUSDC() {
   const chainId = useChainId()
 
   const depositUSDC = async (gameId: string, amount: number) => {
+    assertEscrowConfigured()
     const gameIdBytes = uuidToBytes32(gameId)
     const amountBigInt = parseUSDC(amount)
 
@@ -128,6 +138,7 @@ export function useDistributePayout() {
     usdcAmounts: number[],
     ethAmounts: number[]
   ) => {
+    assertEscrowConfigured()
     const gameIdBytes = uuidToBytes32(gameId)
     const usdcBigInts = usdcAmounts.map(amt => parseUSDC(amt))
     const ethBigInts = ethAmounts.map(amt => BigInt(0)) // We're not using ETH for now

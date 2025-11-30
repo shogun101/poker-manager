@@ -4,8 +4,13 @@ import PokerEscrowABI from './PokerEscrowABI.json'
 // Toggle between testnet and mainnet
 const USE_MAINNET = process.env.NEXT_PUBLIC_USE_MAINNET === 'true'
 
+// Shared zero-address constant so the UI can detect missing env configuration
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string}`
+
 // Contract addresses
-export const POKER_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_POKER_ESCROW_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`
+export const POKER_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_POKER_ESCROW_ADDRESS || ZERO_ADDRESS) as `0x${string}`
+
+export const isPokerEscrowConfigured = POKER_ESCROW_ADDRESS !== ZERO_ADDRESS
 
 // USDC addresses
 const USDC_ADDRESS_MAINNET = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}` // Real USDC on Base
