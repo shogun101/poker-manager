@@ -84,26 +84,21 @@ function CreateGameContent() {
       if (dbError) {
         console.error('Database error:', dbError)
         setError('Failed to create game. Please try again.')
+        setIsCreating(false)
         return
       }
 
       // Step 2: Create game on blockchain using the database ID
-      console.log('Creating game on blockchain...')
-      await createGameOnChain(game.id)
+      console.log('Creating game on blockchain with ID:', game.id)
+      createGameOnChain(game.id)
 
-      // Wait for blockchain confirmation
-      while (isCreatingOnChain) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-
-      console.log('Game created on blockchain')
-
-      // Redirect to game page where host will buy-in (same flow as other players)
+      // Don't wait for blockchain - redirect immediately
+      // The blockchain transaction will complete in the background
+      console.log('Redirecting to game page...')
       router.push(`/game/${game.game_code}`)
     } catch (err) {
       console.error('Error creating game:', err)
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
-    } finally {
       setIsCreating(false)
     }
   }
