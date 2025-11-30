@@ -3,7 +3,7 @@
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
@@ -17,7 +17,7 @@ function CreateGameContent() {
   // Wagmi and blockchain hooks
   const { address: walletAddress, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
-  const { createGame: createGameOnChain, isPending: isCreatingOnChain } = useCreateGame()
+  const { createGame: createGameOnChain, isPending: isCreatingOnChain, error: blockchainError } = useCreateGame()
 
   // Form state
   const [buyInAmount, setBuyInAmount] = useState('')
@@ -25,6 +25,9 @@ function CreateGameContent() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
   const [showWalletModal, setShowWalletModal] = useState(false)
+  
+  // Track the last blockchain error we've shown to avoid showing stale errors
+  const lastShownErrorRef = useRef<Error | null>(null)
 
   // Pre-fill buy-in amount from URL params
   useEffect(() => {
@@ -33,6 +36,21 @@ function CreateGameContent() {
       setBuyInAmount(buyInParam)
     }
   }, [searchParams])
+
+  // Handle blockchain errors
+  // Only show each unique blockchain error once
+  useEffect(() => {
+    if (blockchainError && blockchainError !== lastShownErrorRef.current) {
+      console.error('⛓️ Blockchain error:', blockchainError)
+      lastShownErrorRef.current = blockchainError
+      
+      // Only show blockchain errors if we're currently in a creation flow
+      if (isCreating || isCreatingOnChain) {
+        setError('Blockchain transaction failed. The game was created but may not be on-chain yet.')
+        setIsCreating(false)
+      }
+    }
+  }, [blockchainError, isCreating, isCreatingOnChain])
 
   // Generate a random 6-character game code
   const generateGameCode = (): string => {
@@ -46,6 +64,18 @@ function CreateGameContent() {
 
   const handleCreateGame = async () => {
     console.log('🎮 CREATE GAME CLICKED')
+    
+    // Prevent multiple simultaneous creation attempts
+    if (isCreating || isCreatingOnChain) {
+      console.log('⚠️ Already creating game, ignoring duplicate click')
+      return
+    }
+    
+    // Clear any previous errors
+    setError('')
+    // Reset the last shown error ref when user explicitly clicks create again
+    lastShownErrorRef.current = null
+    
     // Validation
     if (!buyInAmount || parseFloat(buyInAmount) <= 0) {
       setError('Please enter a valid buy-in amount')
@@ -65,7 +95,6 @@ function CreateGameContent() {
 
     console.log('✅ All validations passed')
     setIsCreating(true)
-    setError('')
 
     try {
       const gameCode = generateGameCode()
