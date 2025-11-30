@@ -1,7 +1,6 @@
 'use client'
 
 import { useFarcaster } from '@/lib/farcaster-provider'
-import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -113,6 +112,7 @@ function CreateGameContent() {
       console.log('🎲 Generated game code:', gameCode)
 
       // Step 1: Create game in database first (to get the ID)
+      // Use API route instead of direct Supabase call to avoid CORS/network issues in Farcaster frames
       console.log('📝 Creating game with:', {
         host_fid: context.user.fid,
         game_code: gameCode,
@@ -120,26 +120,32 @@ function CreateGameContent() {
         currency: currency,
       })
 
-      const { data: game, error: dbError } = await supabase
-        .from('games')
-        .insert({
+      const response = await fetch('/api/games/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           host_fid: context.user.fid,
           game_code: gameCode,
           buy_in_amount: parseFloat(buyInAmount),
           currency: currency,
           status: 'waiting',
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      console.log('📊 Database response:', { game, dbError })
+      console.log('📊 API Response status:', response.status)
 
-      if (dbError) {
-        console.error('❌ Database error:', dbError)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API error:', errorData)
         setError('Failed to create game. Please try again.')
         setIsCreating(false)
         return
       }
+
+      const { game } = await response.json()
+      console.log('✅ Game created:', game)
 
       if (!game) {
         console.error('❌ No game data returned')
