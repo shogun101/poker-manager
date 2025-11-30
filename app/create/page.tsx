@@ -3,13 +3,13 @@
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
 import WalletModal from '@/components/WalletModal'
 
-export default function CreateGame() {
+function CreateGameContent() {
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -241,5 +241,17 @@ export default function CreateGame() {
         />
       </div>
     </div>
+  )
+}
+
+export default function CreateGame() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    }>
+      <CreateGameContent />
+    </Suspense>
   )
 }
