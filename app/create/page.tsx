@@ -137,9 +137,10 @@ function CreateGameContent() {
       console.log('📊 API Response status:', response.status)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ API error:', errorData)
-        setError('Failed to create game. Please try again.')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ API error response:', errorData)
+        const errorMessage = errorData.details || errorData.message || errorData.error || 'Failed to create game'
+        setError(`${errorMessage}. Please try again.`)
         setIsCreating(false)
         return
       }
