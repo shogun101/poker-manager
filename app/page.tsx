@@ -101,7 +101,15 @@ export default function Home() {
   }
 
   const handleCreateGame = () => {
-    router.push('/create')
+    // Pass buy-in amount to create page via URL params
+    const params = new URLSearchParams()
+    if (buyInAmount) {
+      params.set('buyIn', buyInAmount)
+    }
+    if (location) {
+      params.set('location', location)
+    }
+    router.push(`/create?${params.toString()}`)
   }
 
   const handleJoinGame = () => {

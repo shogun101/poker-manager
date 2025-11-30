@@ -3,8 +3,8 @@
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
 import WalletModal from '@/components/WalletModal'
@@ -12,6 +12,7 @@ import WalletModal from '@/components/WalletModal'
 export default function CreateGame() {
   const { isSDKLoaded, context } = useFarcaster()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Wagmi and blockchain hooks
   const { address: walletAddress, isConnected } = useAccount()
@@ -24,6 +25,14 @@ export default function CreateGame() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
   const [showWalletModal, setShowWalletModal] = useState(false)
+
+  // Pre-fill buy-in amount from URL params
+  useEffect(() => {
+    const buyInParam = searchParams.get('buyIn')
+    if (buyInParam) {
+      setBuyInAmount(buyInParam)
+    }
+  }, [searchParams])
 
   // Generate a random 6-character game code
   const generateGameCode = (): string => {
@@ -134,7 +143,7 @@ export default function CreateGame() {
               Buy-in Amount (USDC)
             </label>
             <div className="flex items-center gap-2 px-4 py-3 border-2 border-black rounded-xl bg-white">
-              <span className="text-lg font-[family-name:var(--font-margarine)]">$</span>
+              <span className="text-lg font-[family-name:var(--font-margarine)] text-black">$</span>
               <input
                 type="number"
                 step="0.01"
@@ -142,7 +151,7 @@ export default function CreateGame() {
                 value={buyInAmount}
                 onChange={(e) => setBuyInAmount(e.target.value)}
                 placeholder="10.00"
-                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none bg-white"
+                className="flex-1 text-lg font-[family-name:var(--font-margarine)] outline-none bg-white text-black placeholder:text-gray-400"
               />
             </div>
           </div>
