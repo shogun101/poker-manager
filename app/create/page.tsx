@@ -45,39 +45,30 @@ function CreateGameContent() {
   }
 
   const handleCreateGame = async () => {
-    console.log('🎮 Create Game clicked!')
-    console.log('State:', { buyInAmount, isCreating, isCreatingOnChain, isConnected, walletAddress })
-
     // Validation
     if (!buyInAmount || parseFloat(buyInAmount) <= 0) {
-      console.log('❌ Invalid buy-in amount')
       setError('Please enter a valid buy-in amount')
       return
     }
 
     if (!isSDKLoaded || !context) {
-      console.log('❌ SDK not loaded')
       setError('Farcaster SDK not loaded')
       return
     }
 
     // Check wallet connection
     if (!isConnected || !walletAddress) {
-      console.log('❌ Wallet not connected')
       setError('Please connect your wallet first using the buttons below')
       return
     }
 
-    console.log('✅ All validations passed, creating game...')
     setIsCreating(true)
     setError('')
 
     try {
       const gameCode = generateGameCode()
-      console.log('🎲 Generated game code:', gameCode)
 
       // Step 1: Create game in database first (to get the ID)
-      console.log('💾 Creating game in database...')
       const { data: game, error: dbError } = await supabase
         .from('games')
         .insert({
@@ -91,24 +82,18 @@ function CreateGameContent() {
         .single()
 
       if (dbError) {
-        console.error('❌ Database error:', dbError)
         setError('Failed to create game. Please try again.')
         setIsCreating(false)
         return
       }
 
-      console.log('✅ Game created in database:', game)
-
       // Step 2: Create game on blockchain using the database ID
-      console.log('⛓️ Creating game on blockchain with ID:', game.id)
       createGameOnChain(game.id)
 
       // Don't wait for blockchain - redirect immediately
       // The blockchain transaction will complete in the background
-      console.log('🚀 Redirecting to game page:', game.game_code)
       router.push(`/game/${game.game_code}`)
     } catch (err) {
-      console.error('❌ Error creating game:', err)
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setIsCreating(false)
     }
