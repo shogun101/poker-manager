@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { Currency } from '@/lib/types'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAccount, useConnect } from 'wagmi'
+import { useAccount, useConnect, useChainId } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
 import WalletModal from '@/components/WalletModal'
+import { POKER_ESCROW_ADDRESS } from '@/lib/contracts'
+import { base, baseSepolia } from 'wagmi/chains'
 
 function CreateGameContent() {
   const { isSDKLoaded, context } = useFarcaster()
@@ -17,7 +19,17 @@ function CreateGameContent() {
   // Wagmi and blockchain hooks
   const { address: walletAddress, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
+  const chainId = useChainId()
   const { createGame: createGameOnChain, isPending: isCreatingOnChain, error: blockchainError } = useCreateGame()
+
+  // Log chain configuration on mount
+  useEffect(() => {
+    console.log('🔗 CHAIN CONFIGURATION:')
+    console.log('  Active Chain ID:', chainId)
+    console.log('  Chain Name:', chainId === base.id ? 'Base Mainnet' : chainId === baseSepolia.id ? 'Base Sepolia' : 'Unknown')
+    console.log('  Escrow Address:', POKER_ESCROW_ADDRESS)
+    console.log('  NEXT_PUBLIC_USE_MAINNET:', process.env.NEXT_PUBLIC_USE_MAINNET)
+  }, [])
 
   // Form state
   const [buyInAmount, setBuyInAmount] = useState('')
