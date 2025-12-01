@@ -255,8 +255,8 @@ export default function PlayerView() {
         console.log('Escrow Address:', require('@/lib/contracts').POKER_ESCROW_ADDRESS)
         setBuyInStatus('approving')
 
-        // Approve 10x the buy-in amount to avoid needing multiple approvals
-        const approvalAmount = game.buy_in_amount * 10
+        // Approve the exact buy-in amount needed
+        const approvalAmount = game.buy_in_amount
         console.log('Approval amount:', approvalAmount, 'USDC =', parseUSDC(approvalAmount).toString(), 'raw')
 
         const approveHash = await approveUSDC(approvalAmount)

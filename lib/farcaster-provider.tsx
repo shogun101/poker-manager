@@ -25,7 +25,13 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
     const initFrame = async () => {
       try {
         // Initialize the Farcaster Frame SDK (but don't auto-connect wallet)
-        const frameContext = await sdk.context
+        // Set a timeout to prevent hanging on network errors
+        const frameContext = await Promise.race([
+          sdk.context,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('SDK initialization timeout')), 10000)
+          )
+        ])
         console.log('Farcaster context loaded:', frameContext)
 
         // Mark SDK as ready
@@ -37,8 +43,15 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
         console.log('Farcaster SDK ready called')
       } catch (error) {
         console.error('Failed to initialize Farcaster SDK:', error)
+        if (error instanceof Error && error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+          console.warn('⚠️ Farcaster SDK blocked by browser extension. Please disable ad blockers for full functionality.')
+        }
         // Still call ready even if there's an error, to dismiss splash screen
-        sdk.actions.ready()
+        try {
+          sdk.actions.ready()
+        } catch (readyError) {
+          console.error('Failed to call sdk.actions.ready():', readyError)
+        }
       } finally {
         setIsLoading(false)
       }

@@ -260,6 +260,11 @@ export default function Home() {
                 type="text"
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && gameCode.length === 6) {
+                    handleJoinGame()
+                  }
+                }}
                 placeholder="Enter game code"
                 maxLength={6}
                 className="flex-1 text-base font-[family-name:var(--font-margarine)] outline-none uppercase placeholder:text-gray-400 bg-white text-black"
@@ -308,9 +313,16 @@ export default function Home() {
                             </div>
                           ))}
                         </div>
-                        <p className="font-[family-name:var(--font-lilita)] text-base">
-                          {game.game_code || 'NO NAME'}
-                        </p>
+                        <div className="flex flex-col">
+                          <p className="font-[family-name:var(--font-lilita)] text-base text-black">
+                            {game.location || game.game_code}
+                          </p>
+                          {game.location && (
+                            <p className="text-xs text-gray-400 font-[family-name:var(--font-margarine)]">
+                              Code: {game.game_code}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-2">

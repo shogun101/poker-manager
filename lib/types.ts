@@ -9,6 +9,7 @@ export interface Game {
   created_at: string
   host_fid: number
   game_code: string
+  location?: string | null
   buy_in_amount: number
   currency: Currency
   status: GameStatus

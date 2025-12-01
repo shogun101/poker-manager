@@ -9,6 +9,7 @@ import { useCreateGame } from '@/hooks/usePokerEscrow'
 import WalletModal from '@/components/WalletModal'
 import { POKER_ESCROW_ADDRESS } from '@/lib/contracts'
 import { base, baseSepolia } from 'wagmi/chains'
+import { supabase } from '@/lib/supabase'
 
 function CreateGameContent() {
   const { isSDKLoaded, context } = useFarcaster()
@@ -32,19 +33,24 @@ function CreateGameContent() {
 
   // Form state
   const [buyInAmount, setBuyInAmount] = useState('')
+  const [location, setLocation] = useState('')
   const [currency, setCurrency] = useState<Currency>('USDC')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
   const [showWalletModal, setShowWalletModal] = useState(false)
-  
+
   // Track the last blockchain error we've shown to avoid showing stale errors
   const lastShownErrorRef = useRef<Error | null>(null)
 
-  // Pre-fill buy-in amount from URL params
+  // Pre-fill buy-in amount and location from URL params
   useEffect(() => {
     const buyInParam = searchParams.get('buyIn')
+    const locationParam = searchParams.get('location')
     if (buyInParam) {
       setBuyInAmount(buyInParam)
+    }
+    if (locationParam) {
+      setLocation(locationParam)
     }
   }, [searchParams])
 
@@ -75,18 +81,18 @@ function CreateGameContent() {
 
   const handleCreateGame = async () => {
     console.log('🎮 CREATE GAME CLICKED')
-    
+
     // Prevent multiple simultaneous creation attempts
     if (isCreating || isCreatingOnChain) {
       console.log('⚠️ Already creating game, ignoring duplicate click')
       return
     }
-    
+
     // Clear any previous errors
     setError('')
     // Reset the last shown error ref when user explicitly clicks create again
     lastShownErrorRef.current = null
-    
+
     // Validation
     if (!buyInAmount || parseFloat(buyInAmount) <= 0) {
       setError('Please enter a valid buy-in amount')
@@ -112,41 +118,35 @@ function CreateGameContent() {
       console.log('🎲 Generated game code:', gameCode)
 
       // Step 1: Create game in database first (to get the ID)
-      // Use API route instead of direct Supabase call to avoid CORS/network issues in Farcaster frames
       console.log('📝 Creating game with:', {
         host_fid: context.user.fid,
         game_code: gameCode,
+        location: location || null,
         buy_in_amount: parseFloat(buyInAmount),
         currency: currency,
       })
 
-      const response = await fetch('/api/games/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data: game, error: dbError } = await supabase
+        .from('games')
+        .insert({
           host_fid: context.user.fid,
           game_code: gameCode,
+          location: location || null,
           buy_in_amount: parseFloat(buyInAmount),
           currency: currency,
           status: 'waiting',
-        }),
-      })
+        })
+        .select()
+        .single()
 
-      console.log('📊 API Response status:', response.status)
+      console.log('📊 Database response:', { game, dbError })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ API error response:', errorData)
-        const errorMessage = errorData.details || errorData.message || errorData.error || 'Failed to create game'
-        setError(`${errorMessage}. Please try again.`)
+      if (dbError) {
+        console.error('❌ Database error:', dbError)
+        setError('Failed to create game. Please try again.')
         setIsCreating(false)
         return
       }
-
-      const { game } = await response.json()
-      console.log('✅ Game created:', game)
 
       if (!game) {
         console.error('❌ No game data returned')

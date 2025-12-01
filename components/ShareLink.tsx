@@ -9,8 +9,8 @@ interface ShareLinkProps {
 export default function ShareLink({ gameCode }: ShareLinkProps) {
   const [copied, setCopied] = useState(false)
 
-  // Get the base URL from environment or window location
-  const getWebUrl = () => {
+  // Get the direct app URL - this works for Farcaster Mini Apps
+  const getAppUrl = () => {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}/game/${gameCode}`
     }
@@ -19,28 +19,9 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     return `${baseUrl}/game/${gameCode}`
   }
 
-  // Get the domain without protocol for Farcaster deep link
-  const getDomain = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.host
-    }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://poker-manager-murex.vercel.app'
-    return baseUrl.replace('https://', '').replace('http://', '')
-  }
-
-  // Create Farcaster deep link that opens the app directly
-  // Format: https://farcaster.xyz/~/mini-apps/launch?domain=yourdomain.com&path=/game/ABCD123
-  const getFarcasterDeepLink = () => {
-    const domain = getDomain()
-    const path = `/game/${gameCode}`
-    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${encodeURIComponent(path)}`
-  }
-
-  const webUrl = getWebUrl()
-  const farcasterDeepLink = getFarcasterDeepLink()
-  
-  // Use Farcaster deep link as the share URL - this opens Farcaster app directly
-  const shareUrl = farcasterDeepLink
+  // For Farcaster Mini Apps, the direct URL is all we need
+  // When users click the link in Farcaster, it will open the Mini App directly
+  const shareUrl = getAppUrl()
 
   const handleCopy = async () => {
     try {
@@ -77,9 +58,9 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
           </button>
         </div>
 
-        {/* Helper text for Farcaster users */}
+        {/* Helper text */}
         <p className="text-xs text-gray-500 text-center font-[family-name:var(--font-margarine)]">
-          🚀 Opens Farcaster app directly on mobile
+          Share this link to invite players to join
         </p>
       </div>
     </div>
