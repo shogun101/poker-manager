@@ -771,8 +771,8 @@ export default function PlayerView() {
             </p>
           </div>
           <div className="border-2 border-black rounded-xl p-3 bg-white">
-            <p className="text-xs text-gray-500 mb-1 font-[family-name:var(--font-margarine)]">Total Pot</p>
-            <p className="text-lg font-[family-name:var(--font-lilita)] text-accent">
+            <p className="text-xs text-gray-600 mb-1 font-[family-name:var(--font-margarine)]">Total Pot</p>
+            <p className="text-lg font-[family-name:var(--font-lilita)] text-black">
               ${totalPot}
             </p>
           </div>
