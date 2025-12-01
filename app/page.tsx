@@ -2,23 +2,43 @@
 
 import { useFarcaster } from '@/lib/farcaster-provider'
 import { supabase } from '@/lib/supabase'
-import { Game } from '@/lib/types'
-import { useState, useEffect } from 'react'
+import { Game, Currency } from '@/lib/types'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUSDCBalance } from '@/hooks/usePokerEscrow'
-import { useAccount } from 'wagmi'
+import { useUSDCBalance, useCreateGame } from '@/hooks/usePokerEscrow'
+import { useAccount, useConnect } from 'wagmi'
 import Image from 'next/image'
+import WalletModal from '@/components/WalletModal'
 
 export default function Home() {
   const { isSDKLoaded, context, isLoading } = useFarcaster()
   const router = useRouter()
-  const { address: walletAddress } = useAccount()
+  const { address: walletAddress, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
   const { balance: usdcBalance } = useUSDCBalance(walletAddress)
+  const { createGame: createGameOnChain, isPending: isCreatingOnChain, error: blockchainError } = useCreateGame()
 
   const [gameCode, setGameCode] = useState('')
   const [location, setLocation] = useState('')
   const [buyInAmount, setBuyInAmount] = useState('')
   const [myGames, setMyGames] = useState<Array<Game & { isHost: boolean; playerCount: number }>>([])
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState('')
+  const [showWalletModal, setShowWalletModal] = useState(false)
+  const lastShownErrorRef = useRef<Error | null>(null)
+
+  // Handle blockchain errors
+  useEffect(() => {
+    if (blockchainError && blockchainError !== lastShownErrorRef.current) {
+      console.error('⛓️ Blockchain error:', blockchainError)
+      lastShownErrorRef.current = blockchainError
+
+      if (isCreating || isCreatingOnChain) {
+        setError('Blockchain transaction failed. The game was created but may not be on-chain yet.')
+        setIsCreating(false)
+      }
+    }
+  }, [blockchainError, isCreating, isCreatingOnChain])
 
   // Load user's games
   useEffect(() => {
@@ -100,16 +120,103 @@ export default function Home() {
     )
   }
 
-  const handleCreateGame = () => {
-    // Pass buy-in amount to create page via URL params
-    const params = new URLSearchParams()
-    if (buyInAmount) {
-      params.set('buyIn', buyInAmount)
+  // Generate a random 6-character game code
+  const generateGameCode = (): string => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    if (location) {
-      params.set('location', location)
+    return code
+  }
+
+  const handleCreateGame = async () => {
+    console.log('🎮 CREATE GAME CLICKED')
+
+    // Prevent multiple simultaneous creation attempts
+    if (isCreating || isCreatingOnChain) {
+      console.log('⚠️ Already creating game, ignoring duplicate click')
+      return
     }
-    router.push(`/create?${params.toString()}`)
+
+    // Clear any previous errors
+    setError('')
+    lastShownErrorRef.current = null
+
+    // Validation
+    if (!buyInAmount || parseFloat(buyInAmount) <= 0) {
+      setError('Please enter a valid buy-in amount')
+      return
+    }
+
+    if (!isSDKLoaded || !context) {
+      setError('Farcaster SDK not loaded')
+      return
+    }
+
+    // Check wallet connection
+    if (!isConnected || !walletAddress) {
+      setError('Please connect your wallet first')
+      setShowWalletModal(true)
+      return
+    }
+
+    console.log('✅ All validations passed')
+    setIsCreating(true)
+
+    try {
+      const gameCode = generateGameCode()
+      console.log('🎲 Generated game code:', gameCode)
+
+      // Step 1: Create game in database first (to get the ID)
+      console.log('📝 Creating game with:', {
+        host_fid: context.user.fid,
+        game_code: gameCode,
+        buy_in_amount: parseFloat(buyInAmount),
+      })
+
+      const { data: game, error: dbError } = await supabase
+        .from('games')
+        .insert({
+          host_fid: context.user.fid,
+          game_code: gameCode,
+          buy_in_amount: parseFloat(buyInAmount),
+          currency: 'USDC' as Currency,
+          status: 'waiting',
+        })
+        .select()
+        .single()
+
+      console.log('📊 Database response:', { game, dbError })
+
+      if (dbError) {
+        console.error('❌ Database error:', dbError)
+        setError('Failed to create game. Please try again.')
+        setIsCreating(false)
+        return
+      }
+
+      if (!game) {
+        console.error('❌ No game data returned')
+        setError('Failed to create game. No data returned.')
+        setIsCreating(false)
+        return
+      }
+
+      console.log('✅ Game created in DB:', game)
+
+      // Step 2: Create game on blockchain using the database ID
+      console.log('⛓️ Creating game on blockchain with ID:', game.id)
+      createGameOnChain(game.id)
+
+      // Don't wait for blockchain - redirect immediately
+      console.log('🚀 Redirecting to:', `/game/${game.game_code}`)
+      router.push(`/game/${game.game_code}`)
+    } catch (err) {
+      console.error('❌ Caught error:', err)
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setIsCreating(false)
+    }
   }
 
   const handleJoinGame = () => {
@@ -235,12 +342,59 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Wallet Connection Status */}
+          {!isConnected ? (
+            <div className="mb-4">
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-3">
+                <p className="text-sm text-blue-800 font-[family-name:var(--font-margarine)]">
+                  💼 Connect your wallet to create a game
+                </p>
+              </div>
+              <div className="space-y-2">
+                {connectors.find(c => c.name.toLowerCase().includes('farcaster')) && (
+                  <button
+                    onClick={() => connect({ connector: connectors.find(c => c.name.toLowerCase().includes('farcaster'))! })}
+                    className="w-full flex items-center gap-3 px-4 py-3 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
+                  >
+                    <span className="text-xl">🟣</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-[family-name:var(--font-margarine)] text-black">Farcaster Wallet</p>
+                    </div>
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowWalletModal(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
+                >
+                  <span className="text-xl">💼</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-[family-name:var(--font-margarine)] text-black">Other Wallets</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4 p-3 bg-green-50 border-2 border-green-200 rounded-xl">
+              <p className="text-sm text-green-800 font-[family-name:var(--font-margarine)]">
+                ✅ Wallet: {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 mb-4 font-[family-name:var(--font-margarine)]">
+              {error}
+            </div>
+          )}
+
           <button
             onClick={handleCreateGame}
-            className="w-full py-4 bg-primary text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide"
+            disabled={isCreating || isCreatingOnChain || !buyInAmount}
+            className="w-full py-4 bg-primary text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
             style={{ textShadow: '0 2px 0 rgba(0,0,0,1)' }}
           >
-            Create a Game
+            {isCreatingOnChain ? 'Creating on Blockchain...' : isCreating ? 'Creating...' : 'Create a Game'}
           </button>
 
           {/* Divider */}
@@ -347,6 +501,16 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Wallet Modal for External Wallets */}
+      <WalletModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onConnectSuccess={() => {
+          setShowWalletModal(false)
+          setError('')
+        }}
+      />
     </div>
   )
 }
