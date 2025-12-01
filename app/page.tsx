@@ -313,16 +313,9 @@ export default function Home() {
                             </div>
                           ))}
                         </div>
-                        <div className="flex flex-col">
-                          <p className="font-[family-name:var(--font-lilita)] text-base text-black">
-                            {game.location || game.game_code}
-                          </p>
-                          {game.location && (
-                            <p className="text-xs text-gray-400 font-[family-name:var(--font-margarine)]">
-                              Code: {game.game_code}
-                            </p>
-                          )}
-                        </div>
+                        <p className="font-[family-name:var(--font-lilita)] text-base text-black">
+                          {game.game_code}
+                        </p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-2">

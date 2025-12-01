@@ -33,7 +33,6 @@ function CreateGameContent() {
 
   // Form state
   const [buyInAmount, setBuyInAmount] = useState('')
-  const [location, setLocation] = useState('')
   const [currency, setCurrency] = useState<Currency>('USDC')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
@@ -42,15 +41,11 @@ function CreateGameContent() {
   // Track the last blockchain error we've shown to avoid showing stale errors
   const lastShownErrorRef = useRef<Error | null>(null)
 
-  // Pre-fill buy-in amount and location from URL params
+  // Pre-fill buy-in amount from URL params
   useEffect(() => {
     const buyInParam = searchParams.get('buyIn')
-    const locationParam = searchParams.get('location')
     if (buyInParam) {
       setBuyInAmount(buyInParam)
-    }
-    if (locationParam) {
-      setLocation(locationParam)
     }
   }, [searchParams])
 
@@ -121,7 +116,6 @@ function CreateGameContent() {
       console.log('📝 Creating game with:', {
         host_fid: context.user.fid,
         game_code: gameCode,
-        location: location || null,
         buy_in_amount: parseFloat(buyInAmount),
         currency: currency,
       })
@@ -131,7 +125,6 @@ function CreateGameContent() {
         .insert({
           host_fid: context.user.fid,
           game_code: gameCode,
-          location: location || null,
           buy_in_amount: parseFloat(buyInAmount),
           currency: currency,
           status: 'waiting',
