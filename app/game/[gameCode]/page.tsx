@@ -48,7 +48,7 @@ export default function PlayerView() {
   const [pauseSubscription, setPauseSubscription] = useState(false)
 
   useEffect(() => {
-    if (!gameCode || !isSDKLoaded || !context) return
+    if (!gameCode) return
 
     const loadGameData = async () => {
       // Skip if we're in the middle of a transaction
@@ -82,15 +82,18 @@ export default function PlayerView() {
 
         setGame(gameData)
 
-        const { data: playerData } = await supabase
-          .from('players')
-          .select('*')
-          .eq('game_id', gameData.id)
-          .eq('fid', context.user.fid)
-          .single()
+        // Only load player data if we have context
+        if (context) {
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('*')
+            .eq('game_id', gameData.id)
+            .eq('fid', context.user.fid)
+            .single()
 
-        if (playerData) {
-          setPlayer(playerData)
+          if (playerData) {
+            setPlayer(playerData)
+          }
         }
 
         const { data: playersData } = await supabase
@@ -185,7 +188,7 @@ export default function PlayerView() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [gameCode, isSDKLoaded, context, game])
+  }, [gameCode, context, game])
 
   // Shared buy-in logic for both joining and additional buy-ins
   const handleBuyIn = async () => {
@@ -669,6 +672,15 @@ export default function PlayerView() {
                 💡 <strong>Recommended:</strong> Use MetaMask or Coinbase Wallet for the best experience.
               </p>
             </div>
+
+            {/* Show notice if SDK isn't loaded */}
+            {!isSDKLoaded && (
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3 mb-4">
+                <p className="text-sm text-yellow-800 font-[family-name:var(--font-margarine)]">
+                  ⏳ Loading Farcaster connection... Please wait a moment.
+                </p>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
