@@ -9,19 +9,20 @@ interface ShareLinkProps {
 export default function ShareLink({ gameCode }: ShareLinkProps) {
   const [copied, setCopied] = useState(false)
 
-  // Get the direct app URL - this works for Farcaster Mini Apps
-  const getAppUrl = () => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/game/${gameCode}`
-    }
-    // Fallback for server-side rendering
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://poker-manager-murex.vercel.app'
-    return `${baseUrl}/game/${gameCode}`
+  // Get Farcaster deep link for Mini App
+  const getFarcasterDeepLink = () => {
+    // Extract domain without https://
+    const domain = process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL.replace('https://', '').replace('http://', '')
+      : 'poker-manager-murex.vercel.app'
+
+    const path = `/game/${gameCode}`
+
+    // Farcaster deep link format for Mini Apps
+    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${encodeURIComponent(path)}`
   }
 
-  // For Farcaster Mini Apps, the direct URL is all we need
-  // When users click the link in Farcaster, it will open the Mini App directly
-  const shareUrl = getAppUrl()
+  const shareUrl = getFarcasterDeepLink()
 
   const handleCopy = async () => {
     try {
