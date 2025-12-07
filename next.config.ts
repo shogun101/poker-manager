@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Required for Farcaster Frame SDK
   reactStrictMode: true,
 
+  // Mark packages with bundling issues as external (server-only)
+  serverExternalPackages: ['pino', 'thread-stream'],
+
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
+
   // Allow external image domains
   images: {
     remotePatterns: [
