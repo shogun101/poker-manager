@@ -3,6 +3,7 @@ export type Currency = 'USDC' | 'ETH'
 export type GameStatus = 'waiting' | 'active' | 'ended'
 export type TransactionType = 'deposit' | 'cash_out' | 'payout'
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed'
+export type PlayerStatus = 'pending' | 'deposited'
 
 export interface Game {
   id: string
@@ -29,6 +30,7 @@ export interface Player {
   final_chip_count: number
   payout_amount: number
   payout_sent: boolean
+  status: PlayerStatus
 }
 
 export interface Transaction {

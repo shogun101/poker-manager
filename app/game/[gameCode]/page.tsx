@@ -100,6 +100,7 @@ export default function PlayerView() {
           .from('players')
           .select('*')
           .eq('game_id', gameData.id)
+          .eq('status', 'deposited')  // Only show deposited players
           .order('created_at', { ascending: true })
 
         if (playersData) {
@@ -190,6 +191,27 @@ export default function PlayerView() {
     }
   }, [gameCode, context, game])
 
+  // Retry helper function for database updates
+  const retryDatabaseUpdate = async (playerId: string, maxRetries = 3): Promise<boolean> => {
+    for (let i = 0; i < maxRetries; i++) {
+      const { error } = await supabase
+        .from('players')
+        .update({ status: 'deposited' })
+        .eq('id', playerId)
+
+      if (!error) {
+        console.log('✅ Player marked as deposited')
+        return true
+      }
+
+      console.warn(`Retry ${i + 1}/${maxRetries} failed:`, error)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))) // Exponential backoff
+    }
+
+    console.error('❌ Failed to update DB after all retries')
+    return false
+  }
+
   // Shared buy-in logic for both joining and additional buy-ins
   const handleBuyIn = async () => {
     if (!game || !context) return
@@ -198,6 +220,8 @@ export default function PlayerView() {
     setBuyInStatus('idle')
     setError('')
     setPauseSubscription(true) // Pause subscriptions during transaction
+
+    let pendingPlayerId: string | null = null  // Track pending record for cleanup on error
 
     try {
       // Step 0: Ensure wallet is connected
@@ -210,6 +234,14 @@ export default function PlayerView() {
       }
 
       console.log('Wallet connected:', walletAddress)
+
+      // Step 0.5: Check if player already has pending transaction
+      if (player && player.status === 'pending') {
+        setError('Transaction already in progress. Please wait for it to complete.')
+        setIsJoining(false)
+        setPauseSubscription(false)
+        return
+      }
 
       // Step 1: Check USDC balance
       try {
@@ -238,7 +270,50 @@ export default function PlayerView() {
         throw new Error(`Insufficient USDC balance: need ${game.buy_in_amount}, have ${currentBalance.toFixed(2)}`)
       }
 
-      // Step 2: Check USDC allowance
+      // Step 2: CREATE PENDING PLAYER RECORD FIRST (before blockchain transactions)
+      if (!player) {
+        // New player - CREATE PENDING RECORD FIRST
+        if (!walletAddress) {
+          throw new Error('Wallet address not found')
+        }
+
+        console.log('📝 Creating pending player record BEFORE blockchain...')
+        const { data: pendingPlayer, error: createError } = await supabase
+          .from('players')
+          .insert({
+            game_id: game.id,
+            fid: context.user.fid,
+            wallet_address: walletAddress,
+            total_buy_ins: 1,
+            total_deposited: game.buy_in_amount,
+            status: 'pending',  // ← Create as pending FIRST
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Failed to create pending player:', createError)
+
+          // Check for duplicate pending record (unique constraint)
+          if (createError.code === '23505') {
+            setError('You already have a pending transaction for this game. Please wait for it to complete.')
+          } else {
+            setError('Failed to start join process. Please try again.')
+          }
+
+          setIsJoining(false)
+          setPauseSubscription(false)
+          return
+        }
+
+        console.log('✅ Pending player created:', pendingPlayer.id)
+        pendingPlayerId = pendingPlayer.id
+
+        // Show pending player in UI immediately
+        setPlayer(pendingPlayer)
+      }
+
+      // Step 3: Check USDC allowance
       console.log('Checking USDC allowance...')
       try {
         await refetchAllowance()
@@ -283,7 +358,7 @@ export default function PlayerView() {
         console.log('Allowance refetched after approval')
       }
 
-      // Step 4: Deposit USDC to escrow contract
+      // Step 5: Deposit USDC to escrow contract
       console.log('Requesting USDC deposit...')
       setBuyInStatus('depositing')
 
@@ -300,12 +375,32 @@ export default function PlayerView() {
       console.log('Waiting for deposit confirmation...')
       setBuyInStatus('confirming')
       await waitForTransactionReceipt(wagmiConfig, { hash: depositHash as `0x${string}` })
-      console.log('USDC deposit confirmed!')
+      console.log('✅ USDC deposit confirmed on blockchain!')
 
-      // Step 5: Update database ONLY after blockchain confirmation
-      console.log('Updating database...')
-      if (player) {
-        // Existing player - additional buy-in
+      // Step 6: Mark player as deposited (with retry logic)
+      if (pendingPlayerId) {
+        console.log('📝 Marking player as deposited...')
+        const updateSuccess = await retryDatabaseUpdate(pendingPlayerId)
+
+        if (!updateSuccess) {
+          // All retries failed, but money is in contract
+          console.error('⚠️ Failed to mark as deposited after retries, but blockchain succeeded')
+          // Player will show as pending in UI with a message
+          // Admin can manually update later if needed
+        }
+
+        // Refetch player data to get updated status
+        const { data: updatedPlayer } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', pendingPlayerId)
+          .single()
+
+        if (updatedPlayer) {
+          setPlayer(updatedPlayer)
+        }
+      } else if (player) {
+        // Re-buy for existing player - update totals
         const { error } = await supabase
           .from('players')
           .update({
@@ -320,60 +415,39 @@ export default function PlayerView() {
             total_buy_ins: player.total_buy_ins + 1,
             total_deposited: player.total_deposited + game.buy_in_amount,
           })
-          console.log('Buy-in recorded successfully!')
-
-          // Manually refetch all players to ensure list is updated
-          const { data: updatedPlayers } = await supabase
-            .from('players')
-            .select('*')
-            .eq('game_id', game.id)
-            .order('created_at', { ascending: true })
-          if (updatedPlayers) {
-            setAllPlayers(updatedPlayers)
-          }
+          console.log('✅ Re-buy recorded successfully!')
         } else {
-          console.error('Error updating buy-in:', error)
-          setError('Blockchain transaction succeeded but failed to record in database. Contact support.')
-        }
-      } else {
-        // New player - joining game
-        if (!walletAddress) {
-          throw new Error('Wallet address not found')
-        }
-
-        const { data: newPlayer, error: joinError } = await supabase
-          .from('players')
-          .insert({
-            game_id: game.id,
-            fid: context.user.fid,
-            wallet_address: walletAddress,
-            total_buy_ins: 1,
-            total_deposited: game.buy_in_amount,
-          })
-          .select()
-          .single()
-
-        if (joinError) {
-          console.error('Join error:', joinError)
-          setError('Blockchain transaction succeeded but failed to record join. Contact support.')
-          return
-        }
-
-        console.log('Successfully joined game:', newPlayer)
-        setPlayer(newPlayer)
-
-        // Manually refetch all players to ensure list is updated
-        const { data: updatedPlayers } = await supabase
-          .from('players')
-          .select('*')
-          .eq('game_id', game.id)
-          .order('created_at', { ascending: true })
-        if (updatedPlayers) {
-          setAllPlayers(updatedPlayers)
+          console.error('Error updating re-buy:', error)
+          // Don't throw - money is in contract, just couldn't update totals
         }
       }
+
+      // Manually refetch all players to ensure list is updated
+      const { data: updatedPlayers } = await supabase
+        .from('players')
+        .select('*')
+        .eq('game_id', game.id)
+        .eq('status', 'deposited')  // Only show deposited players
+        .order('created_at', { ascending: true })
+
+      if (updatedPlayers) {
+        setAllPlayers(updatedPlayers)
+      }
+
+      console.log('🎉 Join process completed successfully!')
     } catch (err) {
       console.error('Error with buy-in:', err)
+
+      // Clean up pending player record if blockchain failed
+      if (pendingPlayerId) {
+        console.log('🧹 Cleaning up pending player record due to error...')
+        await supabase
+          .from('players')
+          .delete()
+          .eq('id', pendingPlayerId)
+
+        setPlayer(null)  // Remove from UI
+      }
 
       // Detailed error messages based on what failed
       if (err instanceof Error) {
