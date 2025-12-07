@@ -56,7 +56,9 @@
       "Bash(export SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c')",
       "Bash(supabase db push:*)",
       "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase db push:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase migration:*)"
+      "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase migration:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []
