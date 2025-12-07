@@ -50,7 +50,13 @@
       "Bash(else echo \"No FIGMA token in .env.local\")",
       "Bash(then echo \"=== .env.local exists ===\" grep -E \"NEXT_PUBLIC_SUPABASE\" .env.local)",
       "Bash(bash -c:*)",
-      "Bash(then echo \"=== .env.local exists ===\")"
+      "Bash(then echo \"=== .env.local exists ===\")",
+      "Bash(supabase link:*)",
+      "Bash(supabase login:*)",
+      "Bash(export SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c')",
+      "Bash(supabase db push:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase db push:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase migration:*)"
     ],
     "deny": [],
     "ask": []
