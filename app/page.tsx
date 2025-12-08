@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useUSDCBalance, useCreateGame } from '@/hooks/usePokerEscrow'
 import { useAccount, useConnect } from 'wagmi'
 import Image from 'next/image'
-import WalletModal from '@/components/WalletModal'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 export default function Home() {
   const { isSDKLoaded, context, isLoading } = useFarcaster()
@@ -24,7 +24,6 @@ export default function Home() {
   const [myGames, setMyGames] = useState<Array<Game & { isHost: boolean; playerCount: number }>>([])
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
-  const [showWalletModal, setShowWalletModal] = useState(false)
   const lastShownErrorRef = useRef<Error | null>(null)
 
   // Handle blockchain errors
@@ -157,7 +156,6 @@ export default function Home() {
     // Check wallet connection
     if (!isConnected || !walletAddress) {
       setError('Please connect your wallet first')
-      setShowWalletModal(true)
       return
     }
 
@@ -362,15 +360,9 @@ export default function Home() {
                     </div>
                   </button>
                 )}
-                <button
-                  onClick={() => setShowWalletModal(true)}
-                  className="w-full flex items-center gap-3 px-4 py-3 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
-                >
-                  <span className="text-xl">💼</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-[family-name:var(--font-margarine)] text-black">Other Wallets</p>
-                  </div>
-                </button>
+                <div className="w-full">
+                  <ConnectButton />
+                </div>
               </div>
             </div>
           ) : (
@@ -501,16 +493,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* Wallet Modal for External Wallets */}
-      <WalletModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-        onConnectSuccess={() => {
-          setShowWalletModal(false)
-          setError('')
-        }}
-      />
     </div>
   )
 }

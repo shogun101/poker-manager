@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
+import Toast, { type ToastType } from '@/components/Toast'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
@@ -40,12 +41,18 @@ export default function PlayerView() {
   const [isJoining, setIsJoining] = useState(false)
   const [buyInStatus, setBuyInStatus] = useState<'idle' | 'approving' | 'depositing' | 'confirming'>('idle')
   const [error, setError] = useState('')
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const fetchedFidsRef = useRef<Set<number>>(new Set())
 
   // Host-specific state
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
   const [pauseSubscription, setPauseSubscription] = useState(false)
+
+  // Helper function to show toast notifications
+  const showToast = (message: string, type: ToastType = 'info') => {
+    setToast({ message, type })
+  }
 
   useEffect(() => {
     if (!gameCode) return
@@ -435,6 +442,7 @@ export default function PlayerView() {
       }
 
       console.log('🎉 Join process completed successfully!')
+      showToast('Joined successfully', 'success')
     } catch (err) {
       console.error('Error with buy-in:', err)
 
@@ -449,43 +457,43 @@ export default function PlayerView() {
         setPlayer(null)  // Remove from UI
       }
 
-      // Detailed error messages based on what failed
+      // Show toast notifications for errors
       if (err instanceof Error) {
         const errorMessage = err.message.toLowerCase()
-        
+
         // User cancelled transaction
         if (errorMessage.includes('user rejected') || errorMessage.includes('user denied') || errorMessage.includes('rejected')) {
-          setError('❌ Transaction cancelled. Click "Try Again" below when you\'re ready to approve in your wallet.')
-        } 
+          showToast('Transaction cancelled', 'error')
+        }
         // Insufficient balance errors
         else if (errorMessage.includes('insufficient usdc balance')) {
-          setError('💰 Insufficient USDC balance. You need to add more USDC to your wallet first.')
-        } 
+          showToast('Insufficient USDC', 'error')
+        }
         else if (errorMessage.includes('insufficient funds')) {
-          setError('💰 Insufficient funds. Make sure you have enough USDC and ETH for gas fees.')
+          showToast('Insufficient funds', 'error')
         }
         // Network/connection errors
         else if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('fetch')) {
-          setError('🌐 Network error. Please check your connection and try again.')
+          showToast('Network error', 'error')
         }
         // Wallet connection errors
         else if (errorMessage.includes('failed to connect wallet') || errorMessage.includes('connector')) {
-          setError('🔌 Failed to connect wallet. Please reconnect your wallet and try again.')
+          showToast('Wallet connection failed', 'error')
         }
         // Contract/blockchain errors
         else if (errorMessage.includes('execution reverted') || errorMessage.includes('revert')) {
-          setError('⛓️ Transaction failed on blockchain. This might be a contract error. Please try again.')
+          showToast('Transaction failed', 'error')
         }
         // Generic transaction failure
         else if (errorMessage.includes('transaction failed')) {
-          setError('❌ Transaction failed. Please try again. If the problem persists, check your wallet connection.')
+          showToast('Transaction failed', 'error')
         }
         // Unknown error with details
         else {
-          setError(`❌ Transaction failed: ${err.message}. Please try again or contact support.`)
+          showToast('Transaction failed', 'error')
         }
       } else {
-        setError('❌ An unexpected error occurred. Please try again.')
+        showToast('Transaction failed', 'error')
       }
     } finally {
       setIsJoining(false)
@@ -1126,6 +1134,15 @@ export default function PlayerView() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAccount, useConnect, useChainId } from 'wagmi'
 import { useCreateGame } from '@/hooks/usePokerEscrow'
-import WalletModal from '@/components/WalletModal'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { POKER_ESCROW_ADDRESS } from '@/lib/contracts'
 import { base, baseSepolia } from 'wagmi/chains'
 import { supabase } from '@/lib/supabase'
@@ -36,7 +36,6 @@ function CreateGameContent() {
   const [currency, setCurrency] = useState<Currency>('USDC')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
-  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Track the last blockchain error we've shown to avoid showing stale errors
   const lastShownErrorRef = useRef<Error | null>(null)
@@ -246,16 +245,9 @@ function CreateGameContent() {
                 )}
 
                 {/* External Wallet Button */}
-                <button
-                  onClick={() => setShowWalletModal(true)}
-                  className="w-full flex items-center gap-3 p-4 border-2 border-black rounded-xl hover:bg-gray-50 transition-all text-left"
-                >
-                  <span className="text-2xl">💼</span>
-                  <div className="flex-1">
-                    <p className="text-base font-[family-name:var(--font-margarine)] text-black">Use External Wallet</p>
-                    <p className="text-sm text-gray-500 font-[family-name:var(--font-margarine)]">MetaMask, Coinbase, WalletConnect, etc.</p>
-                  </div>
-                </button>
+                <div className="w-full">
+                  <ConnectButton />
+                </div>
               </div>
             </div>
           ) : (
@@ -286,16 +278,6 @@ function CreateGameContent() {
             </div>
           )}
         </div>
-
-        {/* Wallet Modal for External Wallets */}
-        <WalletModal
-          isOpen={showWalletModal}
-          onClose={() => setShowWalletModal(false)}
-          onConnectSuccess={() => {
-            setShowWalletModal(false)
-            setError('')
-          }}
-        />
       </div>
     </div>
   )
