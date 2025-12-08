@@ -605,7 +605,8 @@ export default function PlayerView() {
           .from('players')
           .update({
             final_chip_count: chips,
-            payout_amount: payout
+            payout_amount: payout,
+            payout_sent: true  // Mark payouts as sent
           })
           .eq('id', player.id)
       )
@@ -950,20 +951,24 @@ export default function PlayerView() {
             )}
 
             {/* Settlement Section - Show when game is active or ended */}
-            {game.status !== 'waiting' && allPlayers.length > 0 && (
-              <div className="mb-6">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-black">Game Settlement</h3>
-                    {game.status === 'ended' && (
-                      <button
-                        onClick={handleEditSettlement}
-                        className="text-xs text-gray-600 hover:text-black cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </div>
+            {game.status !== 'waiting' && allPlayers.length > 0 && (() => {
+              // Check if payouts have been sent (any player has payout_sent = true)
+              const payoutsSent = allPlayers.some(p => p.payout_sent)
+
+              return (
+                <div className="mb-6">
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-black">Game Settlement</h3>
+                      {game.status === 'ended' && !payoutsSent && (
+                        <button
+                          onClick={handleEditSettlement}
+                          className="text-xs text-gray-600 hover:text-black cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
 
                   {/* Chip Count Inputs */}
                   <div className="space-y-3 mb-4">
@@ -1090,13 +1095,18 @@ export default function PlayerView() {
                   )}
 
                   {game.status === 'ended' && (
-                    <div className="text-xs text-gray-600 text-center py-2">
-                      Settlement calculated • Click "Edit" to adjust
+                    <div className="text-xs text-center py-2">
+                      {payoutsSent ? (
+                        <span className="text-green-600 font-medium">✅ Payouts Distributed - Settlement Complete</span>
+                      ) : (
+                        <span className="text-gray-600">Settlement calculated • Click "Edit" to adjust</span>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
-            )}
+              )
+            })()}
           </>
         )}
 
