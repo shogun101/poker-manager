@@ -318,6 +318,14 @@ export default function PlayerView() {
 
         // Show pending player in UI immediately
         setPlayer(pendingPlayer)
+
+        // Fetch Farcaster user data for the current user immediately
+        if (!fetchedFidsRef.current.has(context.user.fid)) {
+          console.log('Fetching Farcaster data for current user...')
+          const userData = await getFarcasterUsers([context.user.fid])
+          setFarcasterUsers(prev => new Map([...prev, ...userData]))
+          fetchedFidsRef.current.add(context.user.fid)
+        }
       }
 
       // Step 3: Check USDC allowance
