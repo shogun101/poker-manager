@@ -19,7 +19,8 @@ export default function ShareLink({ gameCode }: ShareLinkProps) {
     const path = `/game/${gameCode}`
 
     // Farcaster deep link format for Mini Apps
-    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${encodeURIComponent(path)}`
+    // Note: path should NOT be encoded for Farcaster deep links
+    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${path}`
   }
 
   const shareUrl = getFarcasterDeepLink()
