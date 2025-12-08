@@ -448,19 +448,8 @@ export default function Home() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {/* Player Avatar Stack */}
-                        <div className="flex -space-x-2">
-                          {[...Array(Math.min(4, game.playerCount))].map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center"
-                            >
-                              <span className="text-xs text-white">👤</span>
-                            </div>
-                          ))}
-                        </div>
                         <p className="font-[family-name:var(--font-lilita)] text-base text-black">
-                          {game.game_code}
+                          {game.location || game.game_code}
                         </p>
                       </div>
                       <div className="text-right">
