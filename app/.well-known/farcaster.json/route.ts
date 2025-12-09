@@ -22,7 +22,7 @@ export async function GET() {
       splashBackgroundColor: "#ffffff",
       webhookUrl: "https://poker-manager-murex.vercel.app/api/webhook",
       primaryCategory: "games",
-      tags: ["poker", "base", "usdc", "PokerManager", "games"],
+      tags: ["poker", "base", "usdc", "PokerManager", "manager"],
       ogTitle: "Poker Manager",
       ogDescription: "Manage your poker games with crypto buy-ins on Base. Create games, invite friends, and distribute payouts seamlessly with USDC.",
       ogImageUrl: "https://poker-manager-murex.vercel.app/og-image.png"
