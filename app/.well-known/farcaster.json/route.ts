@@ -19,7 +19,6 @@ export async function GET() {
       iconUrl: "https://poker-manager-murex.vercel.app/icon-192.png",
       imageUrl: "https://poker-manager-murex.vercel.app/og-image.png",
       splashImageUrl: "https://poker-manager-murex.vercel.app/splash.png",
-      splashBackgroundColor: "#ffffff",
       webhookUrl: "https://poker-manager-murex.vercel.app/api/webhook",
       primaryCategory: "games",
       tags: ["poker", "base", "usdc", "PokerManager", "manager"],
