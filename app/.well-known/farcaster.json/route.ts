@@ -12,13 +12,20 @@ export async function GET() {
     frame: {
       version: "1",
       name: "Poker Manager",
+      subtitle: "Crypto poker made simple",
+      tagline: "Play poker with crypto buy-ins",
       description: "Manage your poker games with crypto buy-ins on Base. Create games, invite friends, and distribute payouts seamlessly with USDC.",
       homeUrl: "https://poker-manager-murex.vercel.app",
       iconUrl: "https://poker-manager-murex.vercel.app/icon-192.png",
       imageUrl: "https://poker-manager-murex.vercel.app/og-image.png",
       splashImageUrl: "https://poker-manager-murex.vercel.app/splash.png",
       splashBackgroundColor: "#ffffff",
-      webhookUrl: "https://poker-manager-murex.vercel.app/api/webhook"
+      webhookUrl: "https://poker-manager-murex.vercel.app/api/webhook",
+      primaryCategory: "games",
+      tags: ["poker", "crypto", "games", "usdc", "payments"],
+      ogTitle: "Poker Manager - Crypto Poker on Base",
+      ogDescription: "Create poker games with USDC buy-ins. Invite friends and distribute payouts on Base blockchain.",
+      ogImageUrl: "https://poker-manager-murex.vercel.app/og-image.png"
     }
   }
 
