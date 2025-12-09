@@ -9,21 +9,18 @@ interface ShareLinkProps {
 export default function ShareLink({ gameCode }: ShareLinkProps) {
   const [copied, setCopied] = useState(false)
 
-  // Get Farcaster deep link for Mini App
-  const getFarcasterDeepLink = () => {
-    // Extract domain without https://
-    const domain = process.env.NEXT_PUBLIC_APP_URL
-      ? process.env.NEXT_PUBLIC_APP_URL.replace('https://', '').replace('http://', '')
-      : 'poker-manager-murex.vercel.app'
+  // Get Farcaster universal link for Mini App
+  const getFarcasterUniversalLink = () => {
+    // Farcaster universal link format: https://farcaster.xyz/miniapps/<app-id>/<app-slug>/<sub-path>
+    // You can find your app-id and app-slug from the Farcaster Developers page
+    const appId = process.env.NEXT_PUBLIC_FARCASTER_APP_ID || 'W-ghlpB7V1Es'
+    const appSlug = 'poker-manager'
+    const subPath = `game/${gameCode}`
 
-    const path = `/game/${gameCode}`
-
-    // Farcaster deep link format for Mini Apps
-    // Note: path should NOT be encoded for Farcaster deep links
-    return `https://farcaster.xyz/~/mini-apps/launch?domain=${domain}&path=${path}`
+    return `https://farcaster.xyz/miniapps/${appId}/${appSlug}/${subPath}`
   }
 
-  const shareUrl = getFarcasterDeepLink()
+  const shareUrl = getFarcasterUniversalLink()
 
   const handleCopy = async () => {
     try {
