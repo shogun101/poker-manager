@@ -18,12 +18,14 @@ export async function GET() {
       homeUrl: "https://poker-manager-murex.vercel.app",
       iconUrl: "https://poker-manager-murex.vercel.app/icon-192.png",
       imageUrl: "https://poker-manager-murex.vercel.app/og-image.png",
+      heroImageUrl: "https://poker-manager-murex.vercel.app/og-image.png",
       splashImageUrl: "https://poker-manager-murex.vercel.app/splash.png",
       webhookUrl: "https://poker-manager-murex.vercel.app/api/webhook",
+      castShareUrl: "https://poker-manager-murex.vercel.app",
       primaryCategory: "games",
       tags: ["poker", "base", "usdc", "PokerManager", "manager"],
       ogTitle: "Poker Manager",
-      ogDescription: "Manage your poker games with crypto buy-ins on Base. Create games, invite friends, and distribute payouts seamlessly with USDC.",
+      ogDescription: "Manage poker games with USDC on Base. Create games, invite friends, and split the pot seamlessly.",
       ogImageUrl: "https://poker-manager-murex.vercel.app/og-image.png"
     }
   }

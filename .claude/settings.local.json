@@ -59,7 +59,8 @@
       "Bash(SUPABASE_ACCESS_TOKEN='sbp_ed7621d98579e4ec9d6987e917a5bfbb7bccad3c' supabase migration:*)",
       "Bash(npm outdated:*)",
       "Bash(npm audit:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
