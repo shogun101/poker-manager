@@ -178,6 +178,7 @@ export default function Home() {
         .insert({
           host_fid: context.user.fid,
           game_code: gameCode,
+          location: location || null,
           buy_in_amount: parseFloat(buyInAmount),
           currency: 'USDC' as Currency,
           status: 'waiting',
