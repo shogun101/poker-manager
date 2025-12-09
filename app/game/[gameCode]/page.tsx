@@ -9,6 +9,7 @@ import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import ShareLink from '@/components/ShareLink'
 import Toast, { type ToastType } from '@/components/Toast'
+import InsufficientBalance from '@/components/InsufficientBalance'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
@@ -42,11 +43,13 @@ export default function PlayerView() {
   const [buyInStatus, setBuyInStatus] = useState<'idle' | 'approving' | 'depositing' | 'confirming'>('idle')
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [showInsufficientBalance, setShowInsufficientBalance] = useState<{ current: number; required: number } | null>(null)
   const fetchedFidsRef = useRef<Set<number>>(new Set())
 
   // Host-specific state
   const [chipCounts, setChipCounts] = useState<Record<string, string>>({})
   const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false)
+  const [isStartingGame, setIsStartingGame] = useState(false)
   const [pauseSubscription, setPauseSubscription] = useState(false)
 
   // Helper function to show toast notifications
@@ -273,8 +276,10 @@ export default function PlayerView() {
       // Only check balance if we successfully fetched it
       if (usdcBalance !== undefined && usdcBalance < requiredAmount) {
         const currentBalance = Number(usdcBalance) / 1e6
-        setError(`Insufficient USDC balance. You need ${game.buy_in_amount} USDC but have ${currentBalance.toFixed(2)} USDC.`)
-        throw new Error(`Insufficient USDC balance: need ${game.buy_in_amount}, have ${currentBalance.toFixed(2)}`)
+        setShowInsufficientBalance({ current: currentBalance, required: game.buy_in_amount })
+        setIsJoining(false)
+        setPauseSubscription(false)
+        return
       }
 
       // Step 2: CREATE PENDING PLAYER RECORD FIRST (before blockchain transactions)
@@ -462,7 +467,11 @@ export default function PlayerView() {
           .delete()
           .eq('id', pendingPlayerId)
 
-        setPlayer(null)  // Remove from UI
+        // Only clear player state if it was set to the pending player we just deleted
+        // This prevents clearing an existing deposited player's state
+        if (player && player.id === pendingPlayerId) {
+          setPlayer(null)
+        }
       }
 
       // Show toast notifications for errors
@@ -516,13 +525,21 @@ export default function PlayerView() {
   const handleStartGame = async () => {
     if (!game) return
 
-    const { error } = await supabase
-      .from('games')
-      .update({ status: 'active', started_at: new Date().toISOString() })
-      .eq('id', game.id)
+    setIsStartingGame(true)
+    try {
+      const { error } = await supabase
+        .from('games')
+        .update({ status: 'active', started_at: new Date().toISOString() })
+        .eq('id', game.id)
 
-    if (!error) {
-      setGame({ ...game, status: 'active', started_at: new Date().toISOString() })
+      if (!error) {
+        setGame({ ...game, status: 'active', started_at: new Date().toISOString() })
+        showToast('Game started', 'success')
+      } else {
+        showToast('Failed to start game', 'error')
+      }
+    } finally {
+      setIsStartingGame(false)
     }
   }
 
@@ -941,11 +958,11 @@ export default function PlayerView() {
               <div className="mb-6">
                 <button
                   onClick={handleStartGame}
-                  disabled={allPlayers.length === 0}
+                  disabled={isStartingGame || allPlayers.length === 0}
                   className="w-full py-4 bg-black text-white text-lg font-[family-name:var(--font-lilita)] rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
                   style={{ textShadow: '0 2px 0 rgba(0,0,0,0.5)' }}
                 >
-                  Start Game
+                  {isStartingGame ? 'Starting...' : 'Start Game'}
                 </button>
               </div>
             )}
@@ -1159,6 +1176,15 @@ export default function PlayerView() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Insufficient Balance Modal */}
+      {showInsufficientBalance && (
+        <InsufficientBalance
+          currentBalance={showInsufficientBalance.current}
+          requiredAmount={showInsufficientBalance.required}
+          onClose={() => setShowInsufficientBalance(null)}
         />
       )}
     </div>

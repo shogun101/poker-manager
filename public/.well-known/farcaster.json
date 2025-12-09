@@ -7,6 +7,7 @@
   "frame": {
     "version": "1",
     "name": "Poker Manager",
+    "description": "Manage your poker games with crypto buy-ins on Base. Create games, invite friends, and distribute payouts seamlessly with USDC.",
     "homeUrl": "https://poker-manager-murex.vercel.app",
     "iconUrl": "https://poker-manager-murex.vercel.app/icon-192.png",
     "imageUrl": "https://poker-manager-murex.vercel.app/og-image.png",
